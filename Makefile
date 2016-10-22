@@ -2,6 +2,7 @@
 SRC= main.c \
 	 vCommon.c \
 	 vLog.c \
+	 vData.c \
 	 vNet.c
 
 
