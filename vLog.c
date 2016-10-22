@@ -1,18 +1,7 @@
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <pthread.h>
-#include <stdarg.h>
-#include <sys/time.h>
-#include <unistd.h>
-#include <ctype.h>
-#include <sys/types.h>
-#include <sys/stat.h> 
-#include <fcntl.h> 
 
 #include "vLog.h"
 
-VLog_st* ERR=NULL;
+VLog_st* LOG_ERRNO=NULL;
 
 /***********************************************************************************/
 /***********************************************************************************/
@@ -21,16 +10,16 @@ VLog_st*             vlog_create   (int mode, char* file, char* folder, char* fm
 void                 vlog_destroy  (VLog_st* pLog);
 static void          vlog_print    (void* self, const char* szFunc, int nLine, ...);
 static int           _vlog_nDigit  (const char* str);
-static int           _vlog_WriteToFile (char* path, char* buf);
+static int           _vlog_WriteToFile       (char* path, char* buf);
 static char*         _vlog_FmtToString       (char* out, int len, const char* fmt, u64t ts, const char* szFunc, int nLine, va_list ap);
 static char*         _vlog_FmtToStringXColor (char* str, int size);
 
 VTimer_st*           vtimer_create    ();
 void                 vtimer_destroy   (VTimer_st* pTimer);
 static void          vtimer_resume    (void* self);
-static u64t         vtimer_diffms    (void* self);
-static u64t         vtimer_diffus    (void* self);
-static u64t         vtimer_now       (void);
+static u64t          vtimer_diffms    (void* self);
+static u64t          vtimer_diffus    (void* self);
+static u64t          vtimer_now       (void);
 static char*         vtimer_nowString (char* buf, int bufLen, char* fmt);
 static char*         vtimer_tsString  (char* buf, int bufLen, char* fmt, u64t ts);
 static DateTime_st   _vtimer_TS_to_DT (u64t ts);
@@ -42,17 +31,18 @@ static DateTime_st   _vtimer_TS_to_DT (u64t ts);
 VTimer_st* vtimer_create  ()
 {
 	VTimer_st* p = vc_malloc (sizeof(VTimer_st)); 
-	if (p==NULL) { return NULL; }
+	if (p==NULL)
+	{
+		return NULL;
+	}
 
 	memset (p, 0, sizeof(VTimer_st));
-	
 	p->resume    = vtimer_resume;
 	p->diffus    = vtimer_diffus;
 	p->diffms    = vtimer_diffms;
 	p->now       = vtimer_now;
 	p->nowString = vtimer_nowString;
 	p->tsString  = vtimer_tsString;
-
 	pthread_mutex_init (&p->m_mutex, NULL);
 
 	return (VTimer_st*)p;
@@ -95,7 +85,6 @@ static DateTime_st _vtimer_TS_to_DT (u64t ts)
 	struct tm    stTimeInfo;
 
 	gmtime_r (&sec_timet, &stTimeInfo);
-	
 	DT.ts    = ts;
 	DT.yy    = stTimeInfo.tm_year +1900;
 	DT.mm    = stTimeInfo.tm_mon +1;
@@ -125,11 +114,11 @@ static u64t vtimer_diffms (void* self)
     gettimeofday (&now, NULL);
     sec = (now.tv_sec) - ((p->m_tv).tv_sec);
     usec = (now.tv_usec) - ((p->m_tv).tv_usec);
-    if ( usec <0 ) {
+    if ( usec <0 )
+	{
         sec--;
         usec += 1000000;
     }
-
     u64t totalMsec = (usec + (sec*1000000)) >> 10;  // u.sec change to m.sec
     return totalMsec;
 }
@@ -144,13 +133,14 @@ static u64t vtimer_diffus (void* self)
     gettimeofday (&now, NULL);
     sec = (now.tv_sec) - ((p->m_tv).tv_sec);
     usec = (now.tv_usec) - ((p->m_tv).tv_usec);
-    if ( usec <0 ) {
+    if ( usec <0 )
+	{
         sec--;
         usec += 1000000;
     }
-
     u64t totalUsec = (usec + (sec*1000000)) ;  // u.sec change to m.sec
-    return totalUsec;
+    
+	return totalUsec;
 }
 
 
@@ -162,33 +152,43 @@ static u64t vtimer_diffus (void* self)
 
 VLog_st* vlog_create  (int mode, char* file, char* folder, char* fmtScreen, char* fmtFile)
 {
-	if (file==NULL      && strlen(file)==0)      { return NULL;}
-	if (folder==NULL    && strlen(folder)==0)    { return NULL;}
+	if (file==NULL   && strlen(file)==0)
+	{
+		return NULL;
+	}
+	if (folder==NULL && strlen(folder)==0)
+	{
+		return NULL;
+	}
 
 	const char* DFL_fmtScreen = "V";
 	const char* DFL_fmtFile   = "V";
 
 	VLog_st* p = vc_malloc (sizeof(VLog_st)); 
-	if (p==NULL) { return NULL; }
-
+	if (p==NULL)
+	{
+		return NULL;
+	}
 	memset (p, 0, sizeof(VLog_st));
-
 	p->m_mode = mode;
 	p->print  = vlog_print;
 	pthread_mutex_init (&p->m_mutex, NULL);
-
-	if (fmtScreen==NULL || strlen(fmtScreen)==0) {
+	if (fmtScreen==NULL || strlen(fmtScreen)==0)
+	{
 		memcpy (p->m_fmtScreen, DFL_fmtScreen, strlen(DFL_fmtScreen));
-	} else {
+	}
+	else
+	{
 		memcpy (p->m_fmtScreen, fmtScreen, strlen(fmtScreen));
 	}
-
-	if (fmtFile==NULL || strlen(fmtFile)==0) {
+	if (fmtFile==NULL || strlen(fmtFile)==0)
+	{
 		memcpy (p->m_fmtFile, DFL_fmtFile, strlen(DFL_fmtFile));
-	} else {
+	}
+	else
+	{
 		memcpy (p->m_fmtFile, fmtFile, strlen(fmtFile));
 	}
-
 	fd_mkdir (folder);
 	snprintf (p->m_path, sizeof(p->m_path), "%s/%s", folder, file);
 
@@ -243,14 +243,18 @@ static void vlog_print (void* self, const char* szFunc, int nLine, ...)
 static int _vlog_WriteToFile (char* path, char* buf)
 {
 	int fd = fd_open (path);
-	if (fd>=0) {
+	if (fd>=0)
+	{
 		ssize_t size = write (fd, buf, strlen(buf));
-		if (size<0) {
+		if (size<0)
+		{
 			/*ERROR*/;
 		}
 		fd_close (fd);
 		return size;
-	} else {
+	}
+	else
+	{
 		return fd;
 	}
 }
@@ -273,19 +277,20 @@ static char* _vlog_FmtToStringXColor (char* src, int size)
 {
 	const char* Color    = "\033[";
 	const char* ColorEnd = "\033[m";
-
-	char* pRead;
-	char* pReadNext;
-	char* pWrite;
-	int   lenSrc = strlen(src);
-	int   lenColor = strlen(Color);
-	int   i;
-	int   ret;
-	int   offset;
+	char*       pRead;
+	char*       pReadNext;
+	char*       pWrite;
+	int         lenSrc = strlen(src);
+	int         lenColor = strlen(Color);
+	int         i;
+	int         ret;
+	int         offset;
 	
 	pRead = strstr(src, Color);
-	if (pRead==NULL) { return src; }
-	
+	if (pRead==NULL)
+	{
+		return src;
+	}
 	pWrite = pRead;
 	while (*pRead != '\0')
 	{
@@ -305,10 +310,8 @@ static char* _vlog_FmtToStringXColor (char* src, int size)
 
 			pRead++;
 		}
-
 		pReadNext = strstr(pRead, Color);
 		offset = (pReadNext) ? (pReadNext - pRead) : strlen(pRead);
-
 		for (i=0; i<offset; i++)
 		{
 			*(pWrite) = *(pRead);
@@ -325,9 +328,10 @@ static char* _vlog_FmtToString (char* buf, int bufLen, const char* fmt, u64t ts,
 {
 	/* fmt=[Y/M/D h:m:s.u3 | F10():L4 | S | X | V] */
 
-	if (buf==NULL || fmt==NULL) { return NULL; }
-
-	memset (buf, 0, bufLen);
+	if (buf==NULL || fmt==NULL)
+	{
+		return NULL;
+	}
 
 	char*        p = buf;
 	int          space = bufLen;
@@ -340,26 +344,28 @@ static char* _vlog_FmtToString (char* buf, int bufLen, const char* fmt, u64t ts,
 	char*        _p;
 
 	memset (buf, 0, bufLen);
-
 	for (i=0; i<fmtLen; i++)
 	{
 		switch (fmt[i])
 		{
 		/* User string */
 			case 'X':
-				if (ap) {
+				if (ap)
+				{
 					_p=va_arg (ap, char*);
 					(void)(_p);
 				}
 				break;
 			case 'V':
-				if (ap) {
+				if (ap)
+				{
 					_p=va_arg (ap, char*);
 					vsnprintf (p, space, _p, ap);
 				}
 				break;
 			case 'S':
-				if (ap) {
+				if (ap)
+				{
 					nWidth = atoi (fmt+i+1);
 					nDigit = _vlog_nDigit (fmt+i+1);
 					i = i + nDigit;
@@ -403,11 +409,16 @@ static char* _vlog_FmtToString (char* buf, int bufLen, const char* fmt, u64t ts,
 				nWidth = atoi (fmt+i+1);
 				nDigit = _vlog_nDigit (fmt+i+1);
 				i = i + nDigit;
-				if (nWidth==1) {
+				if (nWidth==1)
+				{
 					snprintf (p, space, "%0*llu", nWidth, (ts%1000)/100);
-				} else if (nWidth==2) {
+				}
+				else if (nWidth==2)
+				{
 					snprintf (p, space, "%0*llu", nWidth, (ts%1000)/10);
-				} else {
+				}
+				else
+				{
 					snprintf (p, space, "%0*llu", 3, (ts%1000));
 				}
 				break;
@@ -419,7 +430,6 @@ static char* _vlog_FmtToString (char* buf, int bufLen, const char* fmt, u64t ts,
 		space = space - offset; 
 		p = p + offset;
 	}
-
 	buf[bufLen-1] = '\0';
 
 	return buf;

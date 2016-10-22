@@ -1,12 +1,16 @@
 #ifndef __VDEFINE_H__
 #define __VDEFINE_H__
 
-typedef unsigned long long u64t;
-typedef          long long n64t;
-typedef unsigned int       u32t;
-typedef          int       n32t;
+#include <pthread.h>
 
-typedef void  (*voidf)();
+typedef unsigned long long  u64t;
+typedef          long long  n64t;
+typedef unsigned int        u32t;
+typedef          int        n32t;
+typedef pthread_mutex_t     vmutex_t;
+
+typedef void (*void_fn)();
+typedef  int (*i_fn)();
 
 
 

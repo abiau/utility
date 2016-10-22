@@ -1,24 +1,36 @@
 #ifndef __VLOG_H__
 #define __VLOG_H__
 
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <pthread.h>
+#include <stdarg.h>
+#include <sys/time.h>
+#include <unistd.h>
+#include <ctype.h>
+#include <sys/types.h>
+#include <sys/stat.h> 
+#include <fcntl.h> 
 #include <errno.h>
+
 #include "vDefine.h"
 #include "vCommon.h"
 
 
 
 #define verr(y) do{ \
-	if(ERR) { ERR->print(ERR, __func__, __LINE__, "%s(), errno=%d|%s\n", y, errno, strerror(errno)); \
+	if(LOG_ERRNO) { LOG_ERRNO->print(LOG_ERRNO, __func__, __LINE__, "%s(), errno=%d|%s\n", y, errno, strerror(errno)); \
 	}; }while(0)
 
 #define verr_init(a,b,c) do{ \
-	if(ERR==NULL) { \
-		ERR = vlog_create ((a),(b),(c),"YMD h:m:s.u | F10():L4 | V","YMD h:m:s.u | F10():L4 | V"); \
+	if(LOG_ERRNO==NULL) { \
+		LOG_ERRNO = vlog_create ((a),(b),(c),"YMD h:m:s.u | F10():L4 | V","YMD h:m:s.u | F10():L4 | V"); \
 	}; }while(0)
 
 #define verr_deinit() do{ \
-	if(ERR!=NULL) { \
-		vlog_destroy (ERR); \
+	if(LOG_ERRNO!=NULL) { \
+		vlog_destroy (LOG_ERRNO); \
 	}; }while(0)
 
 /***************************************************************************/
@@ -28,8 +40,9 @@
 typedef struct {
 	/* method. */
 	void             (*print) (void* self, const char* szFunc, int nLine, ...);
+
 	/* data. */
-	pthread_mutex_t  m_mutex;
+	vmutex_t         m_mutex;
 	int              m_mode;
 	char             m_path     [LEN256];
 	char             m_fmtScreen[LEN64];
@@ -37,7 +50,7 @@ typedef struct {
 	char             m_buf      [LEN2048];
 } VLog_st;
 
-extern VLog_st*  ERR;
+extern VLog_st*  LOG_ERRNO;
 
 VLog_st*   vlog_create    (int mode, char* file, char* folder, char* fmtScreen, char* fmtFile);
 void       vlog_destroy   (VLog_st* pLog);

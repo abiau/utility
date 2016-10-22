@@ -1,14 +1,3 @@
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <execinfo.h> 
-#include <pthread.h>
-#include <unistd.h>
-#include <errno.h>
-#include <sys/types.h>
-#include <sys/stat.h> 
-#include <fcntl.h> 
-#include <libgen.h>
 
 #include "vCommon.h"
 
@@ -29,7 +18,6 @@ void fd_Backtrace (char* buf, int len)
 		//snprintf (buf, sizeof(buf), "%s\n", bt_syms[i]);
 		printf ("%s\n", bt_syms[i]);
 	}
-   
 	free(bt_syms);
 }
 
@@ -43,7 +31,10 @@ void fd_Backtrace_file (const char* path)
 
 	bt_size = backtrace(bt, 1024);
 	fd = fd_open (path);
-	if (fd<0) { return ; }
+	if (fd<0)
+	{
+		return ;
+	}
 	backtrace_symbols_fd (bt, bt_size, fd);
 	fd_close (fd);
 
@@ -58,13 +49,18 @@ int fd_open (const char* path)
 	int fd;
 	
 	fd = open (path, flags);
-	if (fd<0) {
-		if (errno==ENOENT) {
+	if (fd<0)
+	{
+		if (errno==ENOENT)
+		{
 		    fd = creat (path, 0644); // fd = open (path, O_WRONLY | O_CREAT| O_TRUNK, 0644);
-			if (fd<0) {
+			if (fd<0)
+			{
 				return fd;
 			}
-		} else {
+		}
+		else
+		{
 			return fd;
 		}
 	}
@@ -91,17 +87,26 @@ int fd_isFolderExist (const char *folder)
 	int ret;
 
 	ret = stat(folder , &s);
-	if (ret==-1) {
-		if (errno == ENOENT) {
+	if (ret==-1)
+	{
+		if (errno == ENOENT)
+		{
 			/* does not exist. */
 			return 0;
-		} else {
+		}
+		else
+		{
 			return 0;
 		}
-	} else {
-		if(S_ISDIR(s.st_mode)) {
+	}
+	else
+	{
+		if(S_ISDIR(s.st_mode))
+		{
 			return 1;
-		} else {
+		}
+		else
+		{
 			return 0;
 		}
 	}
@@ -173,14 +178,14 @@ void vc_msleep (int msec)
 
 	sec = msec/1000;
 	usec = (msec%1000)*1000;
-
 	sleep (sec);
 	usleep (usec);
+
+	return ;
 }
 
 n64t vc_addMemUsage (int size)
 {
-	//static pthread_mutex_t lock_memory = PTHREAD_MUTEX_INITIALIZER;
 	static n64t gMemUsage=0;
 	return  __sync_add_and_fetch (&gMemUsage, size);
 }
@@ -192,11 +197,15 @@ n64t vc_getMemUsage (void)
 
 void* vc_malloc (int size)
 {
-	if (size<=0) { return NULL; }
+	if (size<=0)
+	{
+		return NULL;
+	}
 	
 	void* p;
 	p = malloc (size); 
-	if (p!=NULL) {
+	if (p!=NULL)
+	{
 		vc_addMemUsage (size);
 	}
 	return p;
@@ -204,8 +213,10 @@ void* vc_malloc (int size)
 
 int vc_free (void* p, int size)
 {
-	if (size<=0) { return -1; }
-	if (p==NULL) { return -1; }
+	if (p==NULL || size<=0)
+	{
+		return -1;
+	}
 
 	vc_addMemUsage ((-1)*size);
 	free (p);

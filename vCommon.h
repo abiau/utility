@@ -1,6 +1,18 @@
 #ifndef __VCOMMON_H__
 #define __VCOMMON_H__
 
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <execinfo.h> 
+#include <pthread.h>
+#include <unistd.h>
+#include <errno.h>
+#include <sys/types.h>
+#include <sys/stat.h> 
+#include <fcntl.h> 
+#include <libgen.h>
+
 #include "vDefine.h"
 
 void   vc_msleep          (int msec);
@@ -24,4 +36,6 @@ void   fd_Backtrace       (char* buf, int len);
 
 #endif  /* __VCOMMON_H__ */
 
+	//static pthread_mutex_t lock_memory = PTHREAD_MUTEX_INITIALIZER;
+	//
 

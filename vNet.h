@@ -2,10 +2,21 @@
 #ifndef __VNET_H__
 #define __VNET_H__
 
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <pthread.h>
+#include <errno.h>
+#include <fcntl.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
+#include <arpa/inet.h>
+#include <netdb.h>
+#include <unistd.h>
+
 #include "vDefine.h"
 #include "vCommon.h"
+#include "vLog.h"
 
 typedef struct sockaddr_in  saddrin_t;
 
@@ -27,11 +38,11 @@ typedef struct {
 	int (*accept)  (void* self, VAddr_st* pAddr);
 
 	/* data. */
-	char             m_type;     /* t: SOCK_STREAM ;  u: SOCK_DGRAM  */
-	char             m_zero[7];  /* nouse */
-	int              m_skt;
-	int              m_bindPort;
-	pthread_mutex_t  m_mutex;
+	char            m_type;     /* t: SOCK_STREAM ;  u: SOCK_DGRAM  */
+	char            m_zero[7];  /* nouse */
+	int             m_skt;
+	int             m_bindPort;
+	vmutex_t        m_mutex;
 } VNet_st;
 
 VNet_st* vnet_create  (char type, int bindPort);
@@ -54,19 +65,7 @@ int vnet_Recvfrom  (void* self, int skt, char* buf, int bufLen, VAddr_st* pAddr)
 void      toVAddr   (VAddr_st* pAddr, saddrin_t addr);
 saddrin_t toSaddrIn (char* ip, int port);
 
-
-
-
-
-
-
-
-
-
-
-
-
-
 #endif  /* __VNET_H__ */
 
+//VNet_st* p = (VNet_st*) self;
 

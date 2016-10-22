@@ -7,31 +7,108 @@
 #include "vCommon.h"
 #include "vLog.h"
 #include "vNet.h"
+#include "vData.h"
 
 
-#define vtag(y, x, ...)     Tag->print(   Tag, __func__, __LINE__,              y, x, ##__VA_ARGS__)
-#define vOK(x, ...)         Tag->print(   Tag, __func__, __LINE__, CCG"    OK"CCe, x, ##__VA_ARGS__)
-#define vXX(x, ...)         Tag->print(   Tag, __func__, __LINE__, CCR"  Fail"CCe, x, ##__VA_ARGS__)
-#define vC(x, ...)          Tag->print(   Tag, __func__, __LINE__, CCr"Client"CCe, x, ##__VA_ARGS__)
-#define vS(x, ...)          Tag->print(   Tag, __func__, __LINE__, CCg"Server"CCe, x, ##__VA_ARGS__)
+#define vlog(x, ...)        Log->print(   Log, __func__, __LINE__,    "      "    , x, ##__VA_ARGS__)
+#define vtag(y, x, ...)     Log->print(   Log, __func__, __LINE__,           y    , x, ##__VA_ARGS__)
+#define vOK(x, ...)         Log->print(   Log, __func__, __LINE__, CCG"    OK"CCe , x, ##__VA_ARGS__)
+#define vXX(x, ...)         Log->print(   Log, __func__, __LINE__, CCR"  Fail"CCe , x, ##__VA_ARGS__)
+#define vC(x, ...)          Log->print(   Log, __func__, __LINE__, CCr"Client"CCe , x, ##__VA_ARGS__)
+#define vS(x, ...)          Log->print(   Log, __func__, __LINE__, CCg"Server"CCe , x, ##__VA_ARGS__)
 
-VLog_st*    Tag;
+VLog_st* Log;
 
 void init (void)
 {
 	verr_init (3, "err.log", "./log/");
-	Tag   = vlog_create (  3,     "txt", "./log/", "YMD h:m:s.u | F10():L4 | S | V",  "YMD h:m:s.u | F10():L4 | S | V");
+	Log = vlog_create (  3,     "txt", "./log/", "YMD h:m:s.u | F10():L4 | S | V",  "YMD h:m:s.u | F10():L4 | S | V");
 }
 
 void deinit (void)
 {
 	verr_deinit ();
-	vlog_destroy (Tag);
+	vlog_destroy (Log);
+}
+
+/*************************************************************************************/
+/*************************************************************************************/
+
+static int _equal (void* arg, void* itemInQueue)
+{
+	if (*(int*)arg == *(int*)itemInQueue)
+	{
+		return OK;
+	}
+	else
+	{
+		return FAIL;
+	}
+}
+
+static int _increment (void* arg, void* itemInQueue)
+{
+	if (*(int*)arg < *(int*)itemInQueue)
+	{
+		return OK;
+	}
+	else
+	{
+		return FAIL;
+	}
+}
+
+void sample_datalist ()
+{
+	int* pItem;
+	VDataNode_st* p;
+	vlog ("[MEM] mem=%llu\n", vc_getMemUsage());
+	VDataList_st* List = vdatalist_create ();
+	
+	/* Insert */
+	p = List->insert (List, _increment, int_new(1));
+	p = List->insert (List, _increment, int_new(2));
+	p = List->insert (List, _increment, int_new(9));
+	p = List->insert (List, _increment, int_new(6));
+	p = List->insert (List, _increment, int_new(1));
+	p = List->insert (List, _increment, int_new(4));
+	vlog ("[INFO] size=%d\n", List->size);
+
+	/* Search */
+	p = List->search (List, _equal, pItem=int_new(3));
+	if (p)
+	{
+		vlog ("[SEARCH] id=%2d, arg=%d\n", p->id, *(int*)p->arg);
+	}
+	int_del(pItem);
+
+	/* Foreach & Delete */
+	List->seek (List, NULL);
+	while(1)
+	{
+		p = List->foreach (List);
+		if (!p)
+		{
+			break;
+		}
+		vlog ("[FOREACH] id=%2d, arg=%d\n", p->id, *(int*)p->arg);
+		List->delete (List, p, (void_fn)int_del);
+	}
+
+	vdatalist_destroy (List);
+	vlog ("[MEM] mem=%llu\n", vc_getMemUsage());
+	
+	return ;
+}
+
+void sample_data ()
+{
+	return ;
 }
 
 
-/*************************************************************************************/
-/*************************************************************************************/
+
+
 
 void sample_udpClient ()
 {
@@ -132,20 +209,20 @@ void sample_log ()
 {
 	VTimer_st*  Timer;
 	Timer = vtimer_create ();
-	VLog_st* Log = vlog_create (3, "txt", "./log/", "YMD h:m:s.u | F10():L4 | S | V",  "YMD h:m:s.u | F10():L4 | S | V");
+	VLog_st* LogString = vlog_create (3, "txt", "./log/", "YMD h:m:s.u | F10():L4 | S | V",  "YMD h:m:s.u | F10():L4 | S | V");
 	int i;
 	char buf[128];
 
 	Timer->resume(Timer);
-	Log->print(Log, __func__, __LINE__, "-----", "%s\n", Timer->nowString(buf, sizeof(buf), "YMD h:m:s.u"));
+	LogString->print(LogString, __func__, __LINE__, "-----", "%s\n", Timer->nowString(buf, sizeof(buf), "YMD h:m:s.u"));
 	for (i=0; i<1000; i++)
 	{
 		//vc_msleep (1000);
 		memset (buf, 65+(i%26), sizeof(buf));
 		buf[sizeof(buf)-1] = '\0';
-		Log->print(Log, __func__, __LINE__, "     ", "%s\n", buf);
+		LogString->print(LogString, __func__, __LINE__, "     ", "%s\n", buf);
 	}
-	Log->print(Log, __func__, __LINE__, "-----", "%llu\n", Timer->diffms(Timer));
+	LogString->print(LogString, __func__, __LINE__, "-----", "%llu\n", Timer->diffms(Timer));
 	vtimer_destroy (Timer);
 }
 
@@ -160,8 +237,13 @@ int main (int argc, char* argv[])
 
 	init ();
 
-	
 #if 1
+	sample_datalist ();
+#endif
+#if 0
+	sample_data ();
+#endif
+#if 0
 	sample_log ();
 #endif
 #if 0
