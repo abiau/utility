@@ -48,12 +48,12 @@ typedef struct {
 	char             m_fmtScreen[LEN64];
 	char             m_fmtFile  [LEN64];
 	char             m_buf      [LEN2048];
-} VLog_st;
+} VLog;
 
-extern VLog_st*  LOG_ERRNO;
+extern VLog*  LOG_ERRNO;
 
-VLog_st*   vlog_create    (int mode, char* file, char* folder, char* fmtScreen, char* fmtFile);
-void       vlog_destroy   (VLog_st* pLog);
+VLog* vlog_create   (int mode, char* file, char* folder, char* fmtScreen, char* fmtFile);
+void  vlog_destroy  (VLog* pLog);
 
 
 /* VTIMER */
@@ -68,10 +68,10 @@ typedef struct {
 	/* data. */
 	pthread_mutex_t  m_mutex;
 	struct timeval   m_tv;
-} VTimer_st;
+} VTimer;
 
-VTimer_st* vtimer_create  ();
-void       vtimer_destroy (VTimer_st* pTimer);
+VTimer* vtimer_create  ();
+void    vtimer_destroy (VTimer* pTimer);
 
 
 typedef struct {
@@ -82,7 +82,7 @@ typedef struct {
 	int  h;
 	int  m;
 	int  s;
-} DateTime_st;
+} DateTime;
 
 
 

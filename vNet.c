@@ -2,15 +2,15 @@
 #include "vNet.h"
 
 
-VNet_st* vnet_create  (char type, int bindPort)
+VNet* vnet_create  (char type, int bindPort)
 {
-	VNet_st* p = vc_malloc (sizeof(VNet_st)); 
+	VNet* p = vc_malloc (sizeof(VNet)); 
 	if (p==NULL)
 	{
 		return NULL;
 	}
 
-	memset (p, 0, sizeof(VNet_st));
+	memset (p, 0, sizeof(VNet));
 	/* method. */
 	p->getskt     = vnet_GetSkt;
 	p->connect    = vnet_Connect;
@@ -29,20 +29,20 @@ VNet_st* vnet_create  (char type, int bindPort)
 	_vnet_Set (p->m_skt);
 	_vnet_Bind (p->m_skt, p->m_bindPort);
 
-	return (VNet_st*)p;
+	return (VNet*)p;
 }
 
-void vnet_destroy (VNet_st* pNet)
+void vnet_destroy (VNet* pNet)
 {
 	_vnet_Close (pNet->m_skt);
 
-	vc_free (pNet, sizeof(VNet_st));
+	vc_free (pNet, sizeof(VNet));
 	return ;
 }
 
 int vnet_GetSkt (void* self)
 {
-	VNet_st* p = (VNet_st*) self;
+	VNet* p = (VNet*) self;
 	return p->m_skt;
 }
 
@@ -122,7 +122,7 @@ int _vnet_Bind (int skt, int port)
 
 int vnet_Listen (void* self, int maxSession)
 {
-	VNet_st*  p = (VNet_st*) self;
+	VNet*  p = (VNet*) self;
 	int       ret;
 
 	ret = listen (p->m_skt, maxSession);
@@ -133,9 +133,9 @@ int vnet_Listen (void* self, int maxSession)
 	return ret;
 }
 
-int vnet_Accept (void* self, VAddr_st* pAddr)
+int vnet_Accept (void* self, VAddr* pAddr)
 {
-	VNet_st*   p = (VNet_st*) self;
+	VNet*   p = (VNet*) self;
 
 	int        skt_accept; 
 	saddrin_t  addr;
@@ -150,7 +150,7 @@ int vnet_Accept (void* self, VAddr_st* pAddr)
 
 int vnet_Connect (void* self, char* ip, int port)
 {
-	VNet_st*   p = (VNet_st*) self;
+	VNet*   p = (VNet*) self;
 
 	int        ret;
 	saddrin_t  addr = toSaddrIn(ip, port);
@@ -166,7 +166,7 @@ int vnet_Connect (void* self, char* ip, int port)
 
 int vnet_Write (void* self, int skt,  char* buf, int bufLen)
 {
-	VNet_st*  p = (VNet_st*) self;
+	VNet*  p = (VNet*) self;
 	int       ret;
 	
 	ret = write (skt, buf, bufLen);
@@ -180,7 +180,7 @@ int vnet_Write (void* self, int skt,  char* buf, int bufLen)
 
 int vnet_Read (void* self, int skt,  char* buf, int bufLen) 
 {
-	VNet_st*  p = (VNet_st*) self;
+	VNet*  p = (VNet*) self;
 	int       ret;
 
 	ret = read (skt, buf, bufLen);
@@ -194,7 +194,7 @@ int vnet_Read (void* self, int skt,  char* buf, int bufLen)
 
 int vnet_Sendto (void* self, int skt,  char* buf, int bufLen, char* ip, int port)
 {
-	VNet_st*   p = (VNet_st*) self;
+	VNet*   p = (VNet*) self;
 	int        ret;
 	socklen_t  clen = sizeof(struct sockaddr);
 	saddrin_t  addr = toSaddrIn(ip, port);
@@ -208,9 +208,9 @@ int vnet_Sendto (void* self, int skt,  char* buf, int bufLen, char* ip, int port
 	return ret;
 }
 
-int vnet_Recvfrom  (void* self, int skt, char* buf, int bufLen, VAddr_st* pAddr)
+int vnet_Recvfrom  (void* self, int skt, char* buf, int bufLen, VAddr* pAddr)
 {
-	VNet_st*   p = (VNet_st*) self;
+	VNet*   p = (VNet*) self;
 	int        ret;
 	saddrin_t  addr;
 	socklen_t  clen = sizeof(saddrin_t);
@@ -228,9 +228,9 @@ int vnet_Recvfrom  (void* self, int skt, char* buf, int bufLen, VAddr_st* pAddr)
 }
 
 
-void toVAddr (VAddr_st* pAddr, saddrin_t addr)
+void toVAddr (VAddr* pAddr, saddrin_t addr)
 {
-	memset (pAddr, 0, sizeof(VAddr_st));
+	memset (pAddr, 0, sizeof(VAddr));
 	memcpy (&pAddr->addr, &addr, sizeof(saddrin_t));
 	snprintf (pAddr->ip, sizeof(pAddr->ip), "%s", inet_ntoa (addr.sin_addr));
 	pAddr->port = addr.sin_port;

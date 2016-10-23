@@ -1,42 +1,42 @@
 
 #include "vLog.h"
 
-VLog_st* LOG_ERRNO=NULL;
+VLog* LOG_ERRNO=NULL;
 
 /***********************************************************************************/
 /***********************************************************************************/
 
-VLog_st*             vlog_create   (int mode, char* file, char* folder, char* fmtScreen, char* fmtFile);
-void                 vlog_destroy  (VLog_st* pLog);
+VLog*             vlog_create   (int mode, char* file, char* folder, char* fmtScreen, char* fmtFile);
+void                 vlog_destroy  (VLog* pLog);
 static void          vlog_print    (void* self, const char* szFunc, int nLine, ...);
 static int           _vlog_nDigit  (const char* str);
 static int           _vlog_WriteToFile       (char* path, char* buf);
 static char*         _vlog_FmtToString       (char* out, int len, const char* fmt, u64t ts, const char* szFunc, int nLine, va_list ap);
 static char*         _vlog_FmtToStringXColor (char* str, int size);
 
-VTimer_st*           vtimer_create    ();
-void                 vtimer_destroy   (VTimer_st* pTimer);
+VTimer*           vtimer_create    ();
+void                 vtimer_destroy   (VTimer* pTimer);
 static void          vtimer_resume    (void* self);
 static u64t          vtimer_diffms    (void* self);
 static u64t          vtimer_diffus    (void* self);
 static u64t          vtimer_now       (void);
 static char*         vtimer_nowString (char* buf, int bufLen, char* fmt);
 static char*         vtimer_tsString  (char* buf, int bufLen, char* fmt, u64t ts);
-static DateTime_st   _vtimer_TS_to_DT (u64t ts);
+static DateTime   _vtimer_TS_to_DT (u64t ts);
 
 
 /***********************************************************************************/
 /***********************************************************************************/
 
-VTimer_st* vtimer_create  ()
+VTimer* vtimer_create  ()
 {
-	VTimer_st* p = vc_malloc (sizeof(VTimer_st)); 
+	VTimer* p = vc_malloc (sizeof(VTimer)); 
 	if (p==NULL)
 	{
 		return NULL;
 	}
 
-	memset (p, 0, sizeof(VTimer_st));
+	memset (p, 0, sizeof(VTimer));
 	p->resume    = vtimer_resume;
 	p->diffus    = vtimer_diffus;
 	p->diffms    = vtimer_diffms;
@@ -45,12 +45,12 @@ VTimer_st* vtimer_create  ()
 	p->tsString  = vtimer_tsString;
 	pthread_mutex_init (&p->m_mutex, NULL);
 
-	return (VTimer_st*)p;
+	return (VTimer*)p;
 }
 
-void vtimer_destroy (VTimer_st* pTimer)
+void vtimer_destroy (VTimer* pTimer)
 {
-	vc_free (pTimer, sizeof(VTimer_st));
+	vc_free (pTimer, sizeof(VTimer));
 	return ;
 }
 
@@ -77,9 +77,9 @@ static char* vtimer_tsString (char* buf, int bufLen, char* fmt, u64t ts)
 	return _vlog_FmtToString (buf, bufLen, fmt, ts, NULL, 0, NULL);
 }
 
-static DateTime_st _vtimer_TS_to_DT (u64t ts)
+static DateTime _vtimer_TS_to_DT (u64t ts)
 {
-    DateTime_st  DT;
+    DateTime  DT;
 	u64t        sec_u64   = ts/1000;
 	time_t       sec_timet = sec_u64;
 	struct tm    stTimeInfo;
@@ -99,14 +99,14 @@ static DateTime_st _vtimer_TS_to_DT (u64t ts)
 
 static void vtimer_resume (void* self)
 {
-	VTimer_st* p = (VTimer_st*) self;
+	VTimer* p = (VTimer*) self;
     gettimeofday (&p->m_tv , NULL);
 	return ;
 }
 
 static u64t vtimer_diffms (void* self)
 {
-	VTimer_st* p = (VTimer_st*) self;
+	VTimer* p = (VTimer*) self;
 	struct timeval  now;
     u64t           sec=0;
     u64t           usec=0;
@@ -125,7 +125,7 @@ static u64t vtimer_diffms (void* self)
 
 static u64t vtimer_diffus (void* self)
 {
-	VTimer_st* p = (VTimer_st*) self;
+	VTimer* p = (VTimer*) self;
 	struct timeval  now;
     u64t           sec=0;
     u64t           usec=0;
@@ -150,7 +150,7 @@ static u64t vtimer_diffus (void* self)
 /***********************************************************************************/
 /***********************************************************************************/
 
-VLog_st* vlog_create  (int mode, char* file, char* folder, char* fmtScreen, char* fmtFile)
+VLog* vlog_create  (int mode, char* file, char* folder, char* fmtScreen, char* fmtFile)
 {
 	if (file==NULL   && strlen(file)==0)
 	{
@@ -164,12 +164,12 @@ VLog_st* vlog_create  (int mode, char* file, char* folder, char* fmtScreen, char
 	const char* DFL_fmtScreen = "V";
 	const char* DFL_fmtFile   = "V";
 
-	VLog_st* p = vc_malloc (sizeof(VLog_st)); 
+	VLog* p = vc_malloc (sizeof(VLog)); 
 	if (p==NULL)
 	{
 		return NULL;
 	}
-	memset (p, 0, sizeof(VLog_st));
+	memset (p, 0, sizeof(VLog));
 	p->m_mode = mode;
 	p->print  = vlog_print;
 	pthread_mutex_init (&p->m_mutex, NULL);
@@ -193,15 +193,15 @@ VLog_st* vlog_create  (int mode, char* file, char* folder, char* fmtScreen, char
 	snprintf (p->m_path, sizeof(p->m_path), "%s/%s", folder, file);
 
 
-	return (VLog_st*)p;
+	return (VLog*)p;
 }
 
 
 
-void vlog_destroy (VLog_st* pLog)
+void vlog_destroy (VLog* pLog)
 {
-	VLog_st*  p = (VLog_st*) pLog;
-	vc_free (p, sizeof(VLog_st));
+	VLog*  p = (VLog*) pLog;
+	vc_free (p, sizeof(VLog));
 	return;
 }
 
@@ -213,7 +213,7 @@ void vlog_destroy (VLog_st* pLog)
 
 static void vlog_print (void* self, const char* szFunc, int nLine, ...)
 {
-	VLog_st*  p = (VLog_st*) self;
+	VLog*  p = (VLog*) self;
 	va_list  ap;
 	
 	pthread_mutex_lock (&p->m_mutex);
@@ -336,7 +336,7 @@ static char* _vlog_FmtToString (char* buf, int bufLen, const char* fmt, u64t ts,
 	char*        p = buf;
 	int          space = bufLen;
 	int          fmtLen = strlen(fmt);
-    DateTime_st  DT = _vtimer_TS_to_DT (ts);
+    DateTime  DT = _vtimer_TS_to_DT (ts);
 	int          offset;
 	int          i;
 	int          nWidth;
