@@ -104,27 +104,11 @@ void vdatalist_Unlock (void* self)
 
 
 
-void _vdatalist_PushNode (void* self, SearchFrom_e from, VDataNode* node)
+void _vdatalist_PushNode (void* self, POS_e to, VDataNode* node)
 {
 	VDataList* pList = (VDataList*) self;
 	
-	if (from==HEAD)
-	{
-		if (pList->tail)
-		{
-			/*   ...N   */
-			node->prev = pList->tail;
-			pList->tail->next = node;
-			pList->tail = node;
-		}
-		else
-		{
-			/*   N   */
-			pList->head = node;
-			pList->tail = node;
-		}
-	}
-	else if (from==TAIL)
+	if (to==HEAD)
 	{
 		if (pList->head)
 		{
@@ -140,11 +124,27 @@ void _vdatalist_PushNode (void* self, SearchFrom_e from, VDataNode* node)
 			pList->tail = node;
 		}
 	}
+	else if (to==TAIL)
+	{
+		if (pList->tail)
+		{
+			/*   ...N   */
+			node->prev = pList->tail;
+			pList->tail->next = node;
+			pList->tail = node;
+		}
+		else
+		{
+			/*   N   */
+			pList->head = node;
+			pList->tail = node;
+		}
+	}
 
 	return ;
 }
 
-VDataNode* vdatalist_Insert (void* self, SearchFrom_e from, comparator_ft comp, void* arg)
+VDataNode* vdatalist_Insert (void* self, POS_e from, comparator_ft comp, void* arg)
 {
 	VDataList* pList = (VDataList*) self;
 	VDataNode* node = vdatanode_create (arg);
@@ -160,101 +160,121 @@ VDataNode* vdatalist_Insert (void* self, SearchFrom_e from, comparator_ft comp, 
 	}
 	else
 	{
-		VDataNode* p = vdatalist_Search (pList, from, comp, arg);
-		if (p)
-		{
+		VDataNode* p = _vdatalist_SearchFalse (pList, from, comp, arg);
+
 			if (from==HEAD)
 			{
-				if (p->prev)
+				if (p)
 				{
-					/*   ...Np...   */
-					node->prev = p->prev;
-					node->next = p;
-					p->prev->next = node;
-					p->prev = node;
+					if (p->prev)
+					{
+						/*  ...qNp...  */
+						node->prev = p->prev;
+						node->next = p;
+						p->prev->next = node;
+						p->prev = node;
+					}
+					else
+					{
+						/*         Np...  */
+						_vdatalist_PushNode (pList, HEAD, node);
+					}
 				}
 				else
 				{
-					/*   Np...   */
-					_vdatalist_PushNode (pList, HEAD, node);
+						/*         N         */
+						/*      ...N         */
+						_vdatalist_PushNode (pList, TAIL, node);
 				}
 			}
 			else if (from==TAIL)
 			{
-				if (p->next)
+				if (p)
 				{
-					/*   ...pN...   */
-					node->next = p->next;
-					node->prev = p;
-					p->next->prev = node;
-					p->next = node;
+					if (p->next)
+					{
+						/*  ...pNq...  */
+						node->next = p->next;
+						node->prev = p;
+						p->next->prev = node;
+						p->next = node;
+					}
+					else
+					{
+						/*  ...pN      */
+						_vdatalist_PushNode (pList, TAIL, node);
+					}
 				}
 				else
 				{
-					/*   ..pN   */
-					_vdatalist_PushNode (pList, TAIL, node);
+						/*      N      */
+						/*      N...   */
+						_vdatalist_PushNode (pList, HEAD, node);
 				}
 			}
-		}
-		else
-		{
-			if (from==HEAD)
-			{
-				if (pList->tail)
-				{
-					/*   ...N   */
-					node->prev = pList->tail;
-					pList->tail->next = node;
-					pList->tail = node;
-				}
-				else
-				{
-					/*   N   */
-					_vdatalist_PushNode (pList, HEAD, node);
-				}
-			}
-			else if (from==TAIL)
-			{
-				if (pList->head)
-				{
-					/*   N...   */
-					node->next = pList->head;
-					pList->head->prev = node;
-					pList->head = node;
-				}
-				else
-				{
-					/*   N   */
-					_vdatalist_PushNode (pList, TAIL, node);
-				}
-			}
-		}
 	}
 
 	return node;
 }
 
-VDataNode* vdatalist_Search (void* self, SearchFrom_e from, comparator_ft comp, void* arg)
+VDataNode* _vdatalist_SearchFalse (void* self, POS_e from, comparator_ft comp, void* arg)
 {
 	VDataList* pList = (VDataList*) self;
 	if (!comp)
 	{
 		return NULL;
 	}
-	
-	VDataNode* node;
+	VDataNode* p;
 	if (from==HEAD)
 	{
-		node = pList->head;
+		p = pList->head;
 	}
 	else if (from==TAIL)
 	{
-		node = pList->tail;
+		p = pList->tail;
+	}
+	while (p)
+	{
+		if (comp(p->arg, arg)==OK)
+		{
+			if (from==HEAD)
+			{
+				p = p->next;
+			}
+			else if (from==TAIL)
+			{
+				p = p->prev;
+			}
+		}
+		else
+		{
+			break;
+		}
+	}
+	return p;
+}
+
+VDataNode* vdatalist_Search (void* self, POS_e from, comparator_ft equal, void* arg)
+{
+	VDataList* pList = (VDataList*) self;
+	if (!equal)
+	{
+		return NULL;
+	}
+	
+	VDataNode* p;
+	if (from==HEAD)
+	{
+		p = pList->head;
+	}
+	else if (from==TAIL)
+	{
+		p = pList->tail;
 	}
 
-	while (node)
+	while (p)
 	{
-		if (comp(arg, node->arg)==OK)
+		if (equal(p->arg, arg)==OK)
 		{
 			break;
 		}
@@ -262,16 +282,16 @@ VDataNode* vdatalist_Search (void* self, SearchFrom_e from, comparator_ft comp, 
 		{
 			if (from==HEAD)
 			{
-				node = node->next;
+				p = p->next;
 			}
 			else if (from==TAIL)
 			{
-				node = node->prev;
+				p = p->prev;
 			}
 		}
 	}
 
-	return node;
+	return p;
 }
 
 void vdatalist_Delete (void* self, VDataNode* node, destructor_ft del)
@@ -322,23 +342,46 @@ void vdatalist_Seek (void* self, VDataNode* node)
 	return ;
 }
 
-VDataNode* vdatalist_Foreach (void* self, SearchFrom_e from)
+VDataNode* vdatalist_Foreach (void* self, POS_e from, comparator_ft filter, void* arg)
 {
 	VDataList* pList = (VDataList*) self;
-	VDataNode* node = pList->cur;
-	if (pList->cur)
+	VDataNode* p;
+
+	if (filter && arg)
 	{
-		if (from == HEAD)
+		while (p = pList->cur)
 		{
-			pList->cur = pList->cur->next;
+			if (from == HEAD)
+			{
+				pList->cur = pList->cur->next;
+			}
+			else
+			{
+				pList->cur = pList->cur->prev;
+			}
+			if (filter(p->arg, arg)==OK)
+			{
+				break;
+			}
 		}
-		else
+		return p;
+	}
+	else
+	{
+		if (p = pList->cur)
 		{
-			pList->cur = pList->cur->prev;
+			if (from == HEAD)
+			{
+				pList->cur = pList->cur->next;
+			}
+			else
+			{
+				pList->cur = pList->cur->prev;
+			}
 		}
+		return p;
 	}
 
-	return node;
 }
 
 
@@ -412,23 +455,96 @@ VDataNode* vdatatree_Insert (void* self, comparator_ft comp, void* arg)
 	}
 	pTree->size++;
 
-	if (!pTree->head)
+	VDataNode* p = pTree->head;
+	if (!p)
 	{
 		pTree->head = node;
 	}
 	else
 	{
-#if 0
-		VDataNode* p = vdatatree_Search (pTree, comp, arg);
-		if (p)
+		while (p)
 		{
+			/* |                            |
+			 * |            Node            |
+			 * |          /      \          |
+			 * |     L:False     R:True     |
+			 * |                            |
+			 */
+			if(comp(p->arg, arg)==OK)
+			{
+				if (!p->R)
+				{
+					p->R = node;
+					node->P = p;
+					break;
+				}
+				else
+				{
+					p = p->R;
+					continue;
+				}
+			}
+			else
+			{
+				if (!p->L)
+				{
+					p->L = node;
+					node->P = p;
+					break;
+				}
+				else
+				{
+					p = p->L;
+					continue;
+				}
+			}
+		}
+	}
+	return node;
+}
+
+void vdatatree_Travel (void* self, VDataNode* node, todo_ft todo)
+{
+	VDataTree* pTree = (VDataTree*) self;
+
+	if (node && todo)
+	{
+		vdatatree_Travel (pTree, node->L, todo);
+		todo (node->arg);
+		vdatatree_Travel (pTree, node->R, todo);
+	}
+	return ;
+}
+
+VDataNode* vdatatree_TravelFind (void* self, VDataNode* node, comparator_ft equal, void* arg)
+{
+	VDataTree* pTree = (VDataTree*) self;
+	if (!node)
+	{
+		return NULL;
+	}
+	if (equal)
+	{
+		if (equal (node->arg, arg)==OK)
+		{
+			return node;
 		}
 		else
 		{
+			VDataNode* p=NULL;
+			p = vdatatree_TravelFind (pTree, node->L, equal, arg);
+			if (p)
+			{
+				return p;
+			}
+			p = vdatatree_TravelFind (pTree, node->R, equal, arg);
+			if (p)
+			{
+				return p;
+			}
 		}
-#endif
 	}
-	return node;
+	return NULL;
 }
 
 VDataNode* vdatatree_Search (void* self, comparator_ft comp, void* arg)
@@ -438,30 +554,25 @@ VDataNode* vdatatree_Search (void* self, comparator_ft comp, void* arg)
 		return NULL;
 	}
 	VDataTree* pTree = (VDataTree*) self;
-	VDataNode* node;
-	node = pTree->head;
-	while (node)
+	VDataNode* p = pTree->head;
+	while (p)
 	{
-		int ret = comp(arg, node->arg);
-		if (ret==OK)
-		{
-			break;
-		}
-		else if (ret<0)
-		{
-			node = node->L;
-		}
-		else if (ret>0)
-		{
-			node = node->R;
-		}
+		break;
 	}
-	return node;
+	return p;
 }
 
 void vdatatree_Delete (void* self, VDataNode* node, destructor_ft del)
 {
 	VDataTree* pTree = (VDataTree*) self;
+	if (node)
+	{
+		if (del)
+		{
+			del(node->arg);
+		}
+		vdatanode_destroy (node);
+	}
 	return ;
 }
 

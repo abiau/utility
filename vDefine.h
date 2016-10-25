@@ -43,7 +43,7 @@ typedef  int (*i_fn)();
 #define CCg  "\033[0;32m"
 #define CCy  "\033[0;33m" 
 #define CCb  "\033[0;34m"
-#define CCp  "\033[0;35m"
+#define CCm  "\033[0;35m"
 #define CCc  "\033[0;36m"
 #define CCw  "\033[0;37m"
 
@@ -51,7 +51,7 @@ typedef  int (*i_fn)();
 #define CCG  "\033[1;32m"
 #define CCY  "\033[1;33m"
 #define CCB  "\033[1;34m"
-#define CCP  "\033[1;35m"
+#define CCM  "\033[1;35m"
 #define CCC  "\033[1;36m"
 #define CCW  "\033[1;37m"
 
@@ -59,7 +59,7 @@ typedef  int (*i_fn)();
 #define BBg  "\033[42m"
 #define BBy  "\033[43m"
 #define BBb  "\033[44m"
-#define BBp  "\033[45m"
+#define BBm  "\033[45m"
 #define BBc  "\033[46m"
 #define BBw  "\033[47m"
 
@@ -71,7 +71,7 @@ typedef  int (*i_fn)();
 #define DDg  do{printf(CCg  DDLINE  CCe  "\n", __func__, __LINE__);}while(0)
 #define DDy  do{printf(CCy  DDLINE  CCe  "\n", __func__, __LINE__);}while(0)
 #define DDb  do{printf(CCb  DDLINE  CCe  "\n", __func__, __LINE__);}while(0)
-#define DDp  do{printf(CCm  DDLINE  CCe  "\n", __func__, __LINE__);}while(0)
+#define DDm  do{printf(CCm  DDLINE  CCe  "\n", __func__, __LINE__);}while(0)
 #define DDc  do{printf(CCc  DDLINE  CCe  "\n", __func__, __LINE__);}while(0)
 #define DDw  do{printf(CCw  DDLINE  CCe  "\n", __func__, __LINE__);}while(0)
 
@@ -79,7 +79,7 @@ typedef  int (*i_fn)();
 #define DDG  do{printf(CCG  DDLINE  CCe  "\n", __func__, __LINE__);}while(0)
 #define DDY  do{printf(CCY  DDLINE  CCe  "\n", __func__, __LINE__);}while(0)
 #define DDB  do{printf(CCB  DDLINE  CCe  "\n", __func__, __LINE__);}while(0)
-#define DDP  do{printf(CCM  DDLINE  CCe  "\n", __func__, __LINE__);}while(0)
+#define DDM  do{printf(CCM  DDLINE  CCe  "\n", __func__, __LINE__);}while(0)
 #define DDC  do{printf(CCC  DDLINE  CCe  "\n", __func__, __LINE__);}while(0)
 #define DDW  do{printf(CCW  DDLINE  CCe  "\n", __func__, __LINE__);}while(0)
 
@@ -87,7 +87,7 @@ typedef  int (*i_fn)();
 #define EEg  do{printf(CCg);}while(0)  //green
 #define EEy  do{printf(CCy);}while(0)  //yellow
 #define EEb  do{printf(CCb);}while(0)  //blue
-#define EEp  do{printf(CCm);}while(0)  //purple
+#define EEm  do{printf(CCm);}while(0)  //purple
 #define EEc  do{printf(CCc);}while(0)  //green-blue
 #define EEw  do{printf(CCw);}while(0)  //white
 
@@ -95,7 +95,7 @@ typedef  int (*i_fn)();
 #define EEG  do{printf(CCG);}while(0)
 #define EEY  do{printf(CCY);}while(0)
 #define EEB  do{printf(CCB);}while(0)
-#define EEP  do{printf(CCM);}while(0)
+#define EEM  do{printf(CCM);}while(0)
 #define EEC  do{printf(CCC);}while(0)
 #define EEW  do{printf(CCW);}while(0)
 

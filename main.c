@@ -17,16 +17,18 @@
 #define vC(x, ...)          Log->print(   Log, __func__, __LINE__, CCr"Client"CCe , x, ##__VA_ARGS__)
 #define vS(x, ...)          Log->print(   Log, __func__, __LINE__, CCg"Server"CCe , x, ##__VA_ARGS__)
 
-VLog* Log;
+static VLog* Log;
 
 void init (void)
 {
 	verr_init (3, "err.log", "./log/");
 	Log = vlog_create (  3,     "txt", "./log/", "YMD h:m:s.u | F20():L4 | S | V",  "YMD h:m:s.u | F20():L4 | S | V");
+	vlog ("[MEM] mem=%llu\n", vc_getMemUsage());
 }
 
 void deinit (void)
 {
+	vlog ("[MEM] mem=%llu\n", vc_getMemUsage());
 	verr_deinit ();
 	vlog_destroy (Log);
 }
@@ -34,9 +36,11 @@ void deinit (void)
 /*************************************************************************************/
 /*************************************************************************************/
 
-static int _equal (void* arg, void* itemInQueue)
+static int _SmallerThan (void* itemInQueue, void* arg);
+
+static int _equal (void* itemInQueue, void* arg)
 {
-	if (*(int*)arg == *(int*)itemInQueue)
+	if (*(int*)itemInQueue == *(int*)arg)
 	{
 		return OK;
 	}
@@ -46,9 +50,15 @@ static int _equal (void* arg, void* itemInQueue)
 	}
 }
 
-static int _increment (void* arg, void* itemInQueue)
+static int _do_print (void* arg)
 {
-	if (*(int*)arg < *(int*)itemInQueue)
+	vlog ("[TRAVEL]  arg=%d\n", *(int*)arg);
+	return 0;
+}
+
+static int _SmallerThan (void* itemInQueue, void* arg)
+{
+	if (*(int*)itemInQueue < *(int*)arg)
 	{
 		return OK;
 	}
@@ -57,6 +67,55 @@ static int _increment (void* arg, void* itemInQueue)
 		return FAIL;
 	}
 }
+
+void sample_datatree ()
+{
+	VDataNode* p;
+	VDataTree* Tree = vdatatree_create ();
+#if 1
+	p = Tree->insert (Tree, _SmallerThan, int_new(8));
+	p = Tree->insert (Tree, _SmallerThan, int_new(4));
+	p = Tree->insert (Tree, _SmallerThan, int_new(2));
+	p = Tree->insert (Tree, _SmallerThan, int_new(6));
+	p = Tree->insert (Tree, _SmallerThan, int_new(12));
+	p = Tree->insert (Tree, _SmallerThan, int_new(10));
+	p = Tree->insert (Tree, _SmallerThan, int_new(14));
+#else
+	p = Tree->insert (Tree, _SmallerThan, int_new(4));
+	p = Tree->insert (Tree, _SmallerThan, int_new(2));
+	p = Tree->insert (Tree, _SmallerThan, int_new(6));
+#endif
+	vdatatree_Travel (Tree, Tree->head, _do_print);
+	p = vdatatree_TravelFind (Tree, Tree->head, _SmallerThan, int_new(6));
+	if (p) {
+		vlog ("[FIND] id=[%2d], arg=%d\n", p->id, *(int*)p->arg);
+	} else {
+		vlog ("[FIND] none.\n");
+	}
+	//vdatatree_Delete (Tree, p, (destructor_ft)int_del);
+	vdatatree_destroy (Tree);
+}
+
+#if 0
+void PP (VDataList* pList) 
+{
+	/* Foreach & Delete */
+	pList->seek (pList, pList->head);
+	while(1)
+	{
+		VDataNode* p = pList->foreach (pList, HEAD, NULL, int_new(10));
+		if (!p)
+		{
+			break;
+		}
+		vlog ("[FOREACH] id=%2d, arg=%d\n", p->id, *(int*)p->arg);
+		//pList->delete (pList, p, (destructor_ft)int_del);
+	}
+	vlog ("\n\n");
+	
+}
+#endif
+
 
 void sample_datalist ()
 {
@@ -65,16 +124,16 @@ void sample_datalist ()
 	VDataList* List = vdatalist_create ();
 	
 	/* Insert */
-	p = List->insert (List, HEAD, _increment, int_new(1));
-	p = List->insert (List, HEAD, _increment, int_new(2));
-	p = List->insert (List, HEAD, _increment, int_new(9));
-	p = List->insert (List, HEAD, _increment, int_new(6));
-	p = List->insert (List, HEAD, _increment, int_new(1));
-	p = List->insert (List, HEAD, _increment, int_new(4));
+	p = List->insert (List, HEAD, _SmallerThan, int_new(3));
+	p = List->insert (List, HEAD, _SmallerThan, int_new(2));
+	p = List->insert (List, HEAD, _SmallerThan, int_new(9));
+	p = List->insert (List, HEAD, _SmallerThan, int_new(6));
+	p = List->insert (List, HEAD, _SmallerThan, int_new(1));
+	p = List->insert (List, HEAD, _SmallerThan, int_new(4));
 	vlog ("[INFO] size=%d\n", List->size);
 
 	/* Search */
-	p = List->search (List, HEAD, _equal, pItem=int_new(3));
+	p = List->search (List, HEAD, _equal, pItem=int_new(2));
 	if (p)
 	{
 		vlog ("[SEARCH] id=%2d, arg=%d\n", p->id, *(int*)p->arg);
@@ -85,11 +144,12 @@ void sample_datalist ()
 	}
 	int_del(pItem);
 
+#if 1
 	/* Foreach & Delete */
 	List->seek (List, List->head);
 	while(1)
 	{
-		p = List->foreach (List, HEAD);
+		p = List->foreach (List, HEAD, _SmallerThan, int_new(10));
 		if (!p)
 		{
 			break;
@@ -97,6 +157,7 @@ void sample_datalist ()
 		vlog ("[FOREACH] id=%2d, arg=%d\n", p->id, *(int*)p->arg);
 		List->delete (List, p, (destructor_ft)int_del);
 	}
+#endif
 
 	vdatalist_destroy (List);
 	
@@ -239,9 +300,9 @@ int main (int argc, char* argv[])
 	init ();
 
 #if 1
-	vlog ("[MEM] mem=%llu\n", vc_getMemUsage());
+	sample_datatree ();
+#else
 	sample_datalist ();
-	vlog ("[MEM] mem=%llu\n", vc_getMemUsage());
 #endif
 #if 0
 	sample_data ();
