@@ -102,8 +102,10 @@ VDataNode*    vdatatree_Insert      (void* self, comparator_ft comp, void* arg);
 VDataNode*    vdatatree_Search      (void* self, comparator_ft comp, void* arg);
 void          vdatatree_Delete      (void* self, VDataNode* node, destructor_ft del);
 
-void vdatatree_Travel (void* self, VDataNode* node, todo_ft todo);
-VDataNode* vdatatree_TravelFind (void* self, VDataNode* node, comparator_ft equal, void* arg);
+void          vdatatree_Travel      (void* self, VDataNode* node, todo_ft todo);
+VDataNode*    vdatatree_Find        (void* self, VDataNode* node, comparator_ft equal, void* arg);
+VDataNode*    vdatatree_FindMax     (void* self, VDataNode* node);
+VDataNode*    vdatatree_FindMin     (void* self, VDataNode* node);
 
 #endif  /* __VDATE_H__ */
 

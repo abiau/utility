@@ -345,7 +345,7 @@ void vdatalist_Seek (void* self, VDataNode* node)
 VDataNode* vdatalist_Foreach (void* self, POS_e from, comparator_ft filter, void* arg)
 {
 	VDataList* pList = (VDataList*) self;
-	VDataNode* p;
+	VDataNode* p=NULL;
 
 	if (filter && arg)
 	{
@@ -364,7 +364,6 @@ VDataNode* vdatalist_Foreach (void* self, POS_e from, comparator_ft filter, void
 				break;
 			}
 		}
-		return p;
 	}
 	else
 	{
@@ -379,9 +378,8 @@ VDataNode* vdatalist_Foreach (void* self, POS_e from, comparator_ft filter, void
 				pList->cur = pList->cur->prev;
 			}
 		}
-		return p;
 	}
-
+	return p;
 }
 
 
@@ -464,12 +462,9 @@ VDataNode* vdatatree_Insert (void* self, comparator_ft comp, void* arg)
 	{
 		while (p)
 		{
-			/* |                            |
-			 * |            Node            |
+			/* |            Node            |
 			 * |          /      \          |
-			 * |     L:False     R:True     |
-			 * |                            |
-			 */
+			 * |     L:False     R:True     | */
 			if(comp(p->arg, arg)==OK)
 			{
 				if (!p->R)
@@ -516,35 +511,70 @@ void vdatatree_Travel (void* self, VDataNode* node, todo_ft todo)
 	return ;
 }
 
-VDataNode* vdatatree_TravelFind (void* self, VDataNode* node, comparator_ft equal, void* arg)
+VDataNode* vdatatree_FindMax (void* self, VDataNode* node)
 {
 	VDataTree* pTree = (VDataTree*) self;
 	if (!node)
 	{
 		return NULL;
 	}
+
+	if (node->R)
+	{
+		return vdatatree_FindMax (pTree, node->R);
+	}
+	else
+	{
+		return node;
+	}
+}
+
+VDataNode* vdatatree_FindMin (void* self, VDataNode* node)
+{
+	VDataTree* pTree = (VDataTree*) self;
+	if (!node)
+	{
+		return NULL;
+	}
+
+	if (node->L)
+	{
+		return vdatatree_FindMin (pTree, node->L);
+	}
+	else
+	{
+		return node;
+	}
+}
+
+VDataNode* vdatatree_Find (void* self, VDataNode* node, comparator_ft equal, void* arg)
+{
+	VDataTree* pTree = (VDataTree*) self;
+	if (!node)
+	{
+		return NULL;
+	}
+	VDataNode* p=NULL;
 	if (equal)
 	{
-		if (equal (node->arg, arg)==OK)
+		int ret = equal (node->arg, arg);
+		if (ret==OK)
 		{
-			return node;
+			/* Found. */
+			p = node;
 		}
-		else
+		else if (ret<0)
 		{
-			VDataNode* p=NULL;
-			p = vdatatree_TravelFind (pTree, node->L, equal, arg);
-			if (p)
-			{
-				return p;
-			}
-			p = vdatatree_TravelFind (pTree, node->R, equal, arg);
-			if (p)
-			{
-				return p;
-			}
+			/* Find L. */
+			p = vdatatree_Find (pTree, node->L, equal, arg);
+		}
+		else if (ret>0)
+		{
+			/* Find R. */
+			p = vdatatree_Find (pTree, node->R, equal, arg);
 		}
 	}
-	return NULL;
+	return p;
 }
 
 VDataNode* vdatatree_Search (void* self, comparator_ft comp, void* arg)
