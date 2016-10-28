@@ -33,8 +33,6 @@ void deinit (void)
 /*************************************************************************************/
 /*************************************************************************************/
 
-static int _SmallerThan (void* itemInQueue, void* arg);
-
 static int _equal (void* itemInQueue, void* arg)
 {
 	int nItem = *(int*)itemInQueue;
@@ -56,13 +54,25 @@ static int _equal (void* itemInQueue, void* arg)
 	}
 }
 
-static int _do_print (void* arg)
+static int _print (void* arg)
 {
 	vlog ("[TRAVEL]  arg=%d\n", *(int*)arg);
 	return 0;
 }
 
-static int _SmallerThan (void* itemInQueue, void* arg)
+static int _smallerThan (void* itemInQueue, void* arg)
+{
+	if (*(int*)itemInQueue < *(int*)arg)
+	{
+		return OK;
+	}
+	else
+	{
+		return FAIL;
+	}
+}
+
+static int _increment (void* itemInQueue, void* arg)
 {
 	if (*(int*)itemInQueue < *(int*)arg)
 	{
@@ -76,57 +86,45 @@ static int _SmallerThan (void* itemInQueue, void* arg)
 
 void sample_datatree ()
 {
+	int* pItem;
 	VDataNode* p;
 	VDataTree* Tree = vdatatree_create ();
-#if 0
-	p = Tree->insert (Tree, _SmallerThan, int_new(8));
-	p = Tree->insert (Tree, _SmallerThan, int_new(4));
-	p = Tree->insert (Tree, _SmallerThan, int_new(2));
-	p = Tree->insert (Tree, _SmallerThan, int_new(6));
-	p = Tree->insert (Tree, _SmallerThan, int_new(12));
-	p = Tree->insert (Tree, _SmallerThan, int_new(10));
-	p = Tree->insert (Tree, _SmallerThan, int_new(14));
-#else
-	p = Tree->insert (Tree, _SmallerThan, int_new(6));
-	p = Tree->insert (Tree, _SmallerThan, int_new(4));
-	p = Tree->insert (Tree, _SmallerThan, int_new(2));
-#endif
-	vdatatree_Travel (Tree, Tree->head, _do_print);
-	p = vdatatree_FindMax (Tree, Tree->head);
-	if (p) {
-		vlog ("[FindMax] id=[%2d], arg=%d\n", p->id, *(int*)p->arg);
-	} else {
-		vlog ("[FindMax] none.\n");
+
+	/* Insert. */
+	p = Tree->insert (Tree, _increment, int_new(8));
+	p = Tree->insert (Tree, _increment, int_new(4));
+	p = Tree->insert (Tree, _increment, int_new(2));
+	p = Tree->insert (Tree, _increment, int_new(6));
+	p = Tree->insert (Tree, _increment, int_new(12));
+	p = Tree->insert (Tree, _increment, int_new(10));
+	p = Tree->insert (Tree, _increment, int_new(14));
+	Tree->travel (Tree, _print);
+	
+	/* Search. */
+	p = Tree->search (Tree, _equal, pItem=int_new(7));
+	if (p)
+	{
+		vlog ("[Search] id=[%2d], arg=%d\n", p->id, *(int*)p->arg);
 	}
-	p = vdatatree_Find (Tree, Tree->head, _equal, int_new(2));
-	if (p) {
-		vlog ("[Find] id=[%2d], arg=%d\n", p->id, *(int*)p->arg);
-	} else {
-		vlog ("[Find] none.\n");
+	else
+	{
+		vlog ("[Search] none.\n");
 	}
-	//vdatatree_Delete (Tree, p, (destructor_ft)int_del);
+	int_del (pItem);
+
+
+	/* Delete. */
+	Tree->seek (Tree, MAX);
+	while (p = Tree->foreach (Tree, MAX, NULL, NULL))
+	{
+		Tree->delete (Tree, p, (dtor_ft)int_del);
+		printf ("\n");
+		Tree->travel (Tree, _print);
+	}
+
 	vdatatree_destroy (Tree);
 }
 
-#if 0
-void PP (VDataList* pList) 
-{
-	/* Foreach & Delete */
-	pList->seek (pList, pList->head);
-	while(1)
-	{
-		VDataNode* p = pList->foreach (pList, HEAD, NULL, int_new(10));
-		if (!p)
-		{
-			break;
-		}
-		vlog ("[FOREACH] id=%2d, arg=%d\n", p->id, *(int*)p->arg);
-		//pList->delete (pList, p, (destructor_ft)int_del);
-	}
-	vlog ("\n\n");
-	
-}
-#endif
 
 
 void sample_datalist ()
@@ -136,13 +134,14 @@ void sample_datalist ()
 	VDataList* List = vdatalist_create ();
 	
 	/* Insert */
-	p = List->insert (List, HEAD, _SmallerThan, int_new(3));
-	p = List->insert (List, HEAD, _SmallerThan, int_new(2));
-	p = List->insert (List, HEAD, _SmallerThan, int_new(9));
-	p = List->insert (List, HEAD, _SmallerThan, int_new(6));
-	p = List->insert (List, HEAD, _SmallerThan, int_new(1));
-	p = List->insert (List, HEAD, _SmallerThan, int_new(4));
+	p = List->insert (List, HEAD, _increment, int_new(3));
+	p = List->insert (List, HEAD, _increment, int_new(2));
+	p = List->insert (List, HEAD, _increment, int_new(9));
+	p = List->insert (List, HEAD, _increment, int_new(6));
+	p = List->insert (List, HEAD, _increment, int_new(1));
+	p = List->insert (List, HEAD, _increment, int_new(4));
 	vlog ("[INFO] size=%d\n", List->size);
+	List->travel (List, HEAD, _print);
 
 	/* Search */
 	p = List->search (List, HEAD, _equal, pItem=int_new(2));
@@ -156,20 +155,13 @@ void sample_datalist ()
 	}
 	int_del(pItem);
 
-#if 1
 	/* Foreach & Delete */
 	List->seek (List, List->head);
-	while(1)
+	while(p = List->foreach (List, HEAD, _smallerThan, int_new(100)))
 	{
-		p = List->foreach (List, HEAD, _SmallerThan, int_new(10));
-		if (!p)
-		{
-			break;
-		}
 		vlog ("[FOREACH] id=%2d, arg=%d\n", p->id, *(int*)p->arg);
-		List->delete (List, p, (destructor_ft)int_del);
+		List->delete (List, p, (dtor_ft)int_del);
 	}
-#endif
 
 	vdatalist_destroy (List);
 	
@@ -192,7 +184,7 @@ int main (int argc, char* argv[])
 
 	init ();
 
-#if 1
+#if 0
 	sample_datatree ();
 #else
 	sample_datalist ();

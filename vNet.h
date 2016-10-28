@@ -20,6 +20,11 @@
 
 typedef struct sockaddr_in  saddrin_t;
 
+typedef enum {
+	TCP = 1,
+	UDP = 2,
+} SOCKTYPE_e;
+
 typedef struct {
 	char       ip[32];
 	int        port;
@@ -38,21 +43,21 @@ typedef struct {
 	int (*accept)  (void* self, VAddr* pAddr);
 
 	/* data. */
-	char            m_type;     /* t: SOCKREAM ;  u: SOCK_DGRAM  */
-	char            m_zero[7];  /* nouse */
+	SOCKTYPE_e      m_type;     /* t: SOCK_STREAM ;  u: SOCK_DGRAM  */
+	char            m_zero[4];  /* nouse */
 	int             m_skt;
 	int             m_bindPort;
 	vmutex_t        m_mutex;
 } VNet;
 
-VNet* vnet_create  (char type, int bindPort);
+VNet* vnet_create  (SOCKTYPE_e type, int bindPort);
 void  vnet_destroy (VNet* pNet);
+int   vnet_Open    (SOCKTYPE_e type);
+int   vnet_Close   (int skt);
 
 
-int _vnet_Open     (char type);
-int _vnet_Close    (int skt);
-int _vnet_Set      (int skt);
-int _vnet_Bind     (int skt, int port);
+int vnet_Set       (int skt);
+int vnet_Bind      (int skt, int port);
 int vnet_GetSkt    (void* self);
 int vnet_Listen    (void* self, int maxSession);
 int vnet_Accept    (void* self, VAddr* pAddr);

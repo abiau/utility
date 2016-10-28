@@ -2,7 +2,7 @@
 #include "vNet.h"
 
 
-VNet* vnet_create  (char type, int bindPort)
+VNet* vnet_create  (SOCKTYPE_e type, int bindPort)
 {
 	VNet* p = vc_malloc (sizeof(VNet)); 
 	if (p==NULL)
@@ -25,16 +25,16 @@ VNet* vnet_create  (char type, int bindPort)
 	p->m_bindPort = bindPort;
 	pthread_mutex_init (&p->m_mutex, NULL);
 
-	p->m_skt = _vnet_Open (p->m_type);
-	_vnet_Set (p->m_skt);
-	_vnet_Bind (p->m_skt, p->m_bindPort);
+	p->m_skt = vnet_Open (p->m_type);
+	vnet_Set  (p->m_skt);
+	vnet_Bind (p->m_skt, p->m_bindPort);
 
 	return (VNet*)p;
 }
 
 void vnet_destroy (VNet* pNet)
 {
-	_vnet_Close (pNet->m_skt);
+	vnet_Close (pNet->m_skt);
 
 	vc_free (pNet, sizeof(VNet));
 	return ;
@@ -47,17 +47,17 @@ int vnet_GetSkt (void* self)
 }
 
 
-int _vnet_Open (char type)
+int vnet_Open (SOCKTYPE_e type)
 {
 	int skt;
 	int ret;
 	int sock_type = -1;
 
-	if (type=='t')
+	if (type==TCP)
 	{
 		sock_type = SOCK_STREAM;
 	}
-	else if (type=='u')
+	else if (type==UDP)
 	{
 		sock_type = SOCK_DGRAM;
 	}
@@ -70,13 +70,13 @@ int _vnet_Open (char type)
 	return skt;
 }
 
-int _vnet_Close (int skt)
+int vnet_Close (int skt)
 {
 	return close (skt);
 }
 
 
-int _vnet_Set (int skt)
+int vnet_Set (int skt)
 {
 	if (skt<0)
 	{
@@ -107,7 +107,7 @@ int _vnet_Set (int skt)
 	return ret;
 }
 
-int _vnet_Bind (int skt, int port)
+int vnet_Bind (int skt, int port)
 {
 	int        ret;
 	saddrin_t  addr = toSaddrIn (NULL, port);

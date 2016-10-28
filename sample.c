@@ -20,21 +20,20 @@ extern VLog* Log;
 
 void sample_udpClient ()
 {
-	int skt;
-	VNet* Client;
+	int   skt;
 	char  buf[1024];
 	char* str = "Hello\n";
 
 	memset (buf, 0, sizeof(buf));
 	memcpy (buf, str, strlen(str)+1);
 
-	Client = vnet_create ('u', 5566);
+	VNet* Client = vnet_create (UDP, 5566);
 	skt = Client->getskt (Client);
 	Client->connect (Client, "127.0.0.1", 5566);
 	vC ("skt=%d\n", skt);
 	while (1)
 	{
-		sleep (1);
+		vc_msleep (1000);
 		Client->write (Client, skt, buf, sizeof(buf));
 		vC (buf);
 	}
@@ -43,12 +42,11 @@ void sample_udpClient ()
 
 void sample_udpServer ()
 {
-	int skt;
+	int   skt;
 	VAddr vaddr;
-	VNet* Server;
 	char  buf[1024];
 
-	Server = vnet_create ('u', 5566);
+	VNet* Server = vnet_create (UDP, 5566);
 	skt = Server->getskt (Server);
 	vS ("skt=%d\n", skt);
 	while (1)
@@ -62,21 +60,20 @@ void sample_udpServer ()
 
 void sample_tcpClient ()
 {
-	int skt;
-	VNet* Client;
+	int   skt;
 	char  buf[1024];
 	char* str = "Hello";
 
 	memset (buf, 0, sizeof(buf));
 	memcpy (buf, str, strlen(str)+1);
 
-	Client = vnet_create ('t', 5566);
+	VNet* Client = vnet_create (TCP, 5566);
 	skt = Client->getskt (Client);
 	Client->connect (Client, "127.0.0.1", 5566);
 	vC ("skt=%d\n", skt);
 	while (1)
 	{
-		sleep (1);
+		vc_msleep (1000);
 		Client->write (Client, skt, buf, sizeof(buf));
 		vC ("%s\n", buf);
 	}
@@ -85,14 +82,13 @@ void sample_tcpClient ()
 
 void sample_tcpServer ()
 {
-	int ret;
-	int skt;
-	int sktSession;
+	int   ret;
+	int   skt;
+	int   sktSession;
 	VAddr vaddr;
-	VNet* Server;
 	char  buf[1024];
 
-	Server = vnet_create ('t', 5566);
+	VNet* Server = vnet_create (TCP, 5566);
 	skt = Server->getskt (Server);
 	Server->listen (Server, 10);
 	vS ("skt=%d\n", skt);
@@ -107,7 +103,7 @@ void sample_tcpServer ()
 			if (ret<=0) { break; }
 			vS ("%s\n", buf);
 		}
-		_vnet_Close (sktSession);
+		vnet_Close (sktSession);
 	}
 	vnet_destroy (Server);
 }
@@ -124,7 +120,6 @@ void sample_log ()
 	LogString->print(LogString, __func__, __LINE__, "-----", "%s\n", Timer->nowString(buf, sizeof(buf), "YMD h:m:s.u"));
 	for (i=0; i<1000; i++)
 	{
-		//vc_msleep (1000);
 		memset (buf, 65+(i%26), sizeof(buf));
 		buf[sizeof(buf)-1] = '\0';
 		LogString->print(LogString, __func__, __LINE__, "     ", "%s\n", buf);

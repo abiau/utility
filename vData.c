@@ -74,6 +74,7 @@ VDataList* vdatalist_create  ()
 	pList->delete      = vdatalist_Delete;
 	pList->seek        = vdatalist_Seek;
 	pList->foreach     = vdatalist_Foreach;
+	pList->travel      = vdatalist_Travel;
 	/* data. */
 	pthread_mutex_init (&pList->m_mutex, NULL);
 
@@ -144,7 +145,7 @@ void _vdatalist_PushNode (void* self, POS_e to, VDataNode* node)
 	return ;
 }
 
-VDataNode* vdatalist_Insert (void* self, POS_e from, comparator_ft comp, void* arg)
+VDataNode* vdatalist_Insert (void* self, POS_e from, comp_ft comp, void* arg)
 {
 	VDataList* pList = (VDataList*) self;
 	VDataNode* node = vdatanode_create (arg);
@@ -160,19 +161,19 @@ VDataNode* vdatalist_Insert (void* self, POS_e from, comparator_ft comp, void* a
 	}
 	else
 	{
-		VDataNode* p = _vdatalist_SearchFalse (pList, from, comp, arg);
+		VDataNode* pNode = _vdatalist_SearchFalse (pList, from, comp, arg);
 
 			if (from==HEAD)
 			{
-				if (p)
+				if (pNode)
 				{
-					if (p->prev)
+					if (pNode->prev)
 					{
 						/*  ...qNp...  */
-						node->prev = p->prev;
-						node->next = p;
-						p->prev->next = node;
-						p->prev = node;
+						node->prev = pNode->prev;
+						node->next = pNode;
+						pNode->prev->next = node;
+						pNode->prev = node;
 					}
 					else
 					{
@@ -189,15 +190,15 @@ VDataNode* vdatalist_Insert (void* self, POS_e from, comparator_ft comp, void* a
 			}
 			else if (from==TAIL)
 			{
-				if (p)
+				if (pNode)
 				{
-					if (p->next)
+					if (pNode->next)
 					{
 						/*  ...pNq...  */
-						node->next = p->next;
-						node->prev = p;
-						p->next->prev = node;
-						p->next = node;
+						node->next = pNode->next;
+						node->prev = pNode;
+						pNode->next->prev = node;
+						pNode->next = node;
 					}
 					else
 					{
@@ -217,33 +218,33 @@ VDataNode* vdatalist_Insert (void* self, POS_e from, comparator_ft comp, void* a
 	return node;
 }
 
-VDataNode* _vdatalist_SearchFalse (void* self, POS_e from, comparator_ft comp, void* arg)
+VDataNode* _vdatalist_SearchFalse (void* self, POS_e from, comp_ft comp, void* arg)
 {
 	VDataList* pList = (VDataList*) self;
 	if (!comp)
 	{
 		return NULL;
 	}
-	VDataNode* p;
+	VDataNode* pNode;
 	if (from==HEAD)
 	{
-		p = pList->head;
+		pNode = pList->head;
 	}
 	else if (from==TAIL)
 	{
-		p = pList->tail;
+		pNode = pList->tail;
 	}
-	while (p)
+	while (pNode)
 	{
-		if (comp(p->arg, arg)==OK)
+		if (comp(pNode->arg, arg)==OK)
 		{
 			if (from==HEAD)
 			{
-				p = p->next;
+				pNode = pNode->next;
 			}
 			else if (from==TAIL)
 			{
-				p = p->prev;
+				pNode = pNode->prev;
 			}
 		}
 		else
@@ -251,10 +252,10 @@ VDataNode* _vdatalist_SearchFalse (void* self, POS_e from, comparator_ft comp, v
 			break;
 		}
 	}
-	return p;
+	return pNode;
 }
 
-VDataNode* vdatalist_Search (void* self, POS_e from, comparator_ft equal, void* arg)
+VDataNode* vdatalist_Search (void* self, POS_e from, comp_ft equal, void* arg)
 {
 	VDataList* pList = (VDataList*) self;
 	if (!equal)
@@ -262,19 +263,19 @@ VDataNode* vdatalist_Search (void* self, POS_e from, comparator_ft equal, void* 
 		return NULL;
 	}
 	
-	VDataNode* p;
+	VDataNode* pNode;
 	if (from==HEAD)
 	{
-		p = pList->head;
+		pNode = pList->head;
 	}
 	else if (from==TAIL)
 	{
-		p = pList->tail;
+		pNode = pList->tail;
 	}
 
-	while (p)
+	while (pNode)
 	{
-		if (equal(p->arg, arg)==OK)
+		if (equal(pNode->arg, arg)==OK)
 		{
 			break;
 		}
@@ -282,19 +283,19 @@ VDataNode* vdatalist_Search (void* self, POS_e from, comparator_ft equal, void* 
 		{
 			if (from==HEAD)
 			{
-				p = p->next;
+				pNode = pNode->next;
 			}
 			else if (from==TAIL)
 			{
-				p = p->prev;
+				pNode = pNode->prev;
 			}
 		}
 	}
 
-	return p;
+	return pNode;
 }
 
-void vdatalist_Delete (void* self, VDataNode* node, destructor_ft del)
+void vdatalist_Delete (void* self, VDataNode* node, dtor_ft del)
 {
 	VDataList* pList = (VDataList*) self;
 	if (node)
@@ -342,24 +343,28 @@ void vdatalist_Seek (void* self, VDataNode* node)
 	return ;
 }
 
-VDataNode* vdatalist_Foreach (void* self, POS_e from, comparator_ft filter, void* arg)
+VDataNode* vdatalist_Foreach (void* self, POS_e from, comp_ft filter, void* arg)
 {
 	VDataList* pList = (VDataList*) self;
-	VDataNode* p=NULL;
+	VDataNode* pNode=NULL;
 
 	if (filter && arg)
 	{
-		while (p = pList->cur)
+		while (pNode = pList->cur)
 		{
 			if (from == HEAD)
 			{
 				pList->cur = pList->cur->next;
 			}
-			else
+			else if (from == TAIL)
 			{
 				pList->cur = pList->cur->prev;
 			}
-			if (filter(p->arg, arg)==OK)
+			else
+			{
+				pList->cur = NULL;
+			}
+			if (filter(pNode->arg, arg)==OK)
 			{
 				break;
 			}
@@ -367,21 +372,53 @@ VDataNode* vdatalist_Foreach (void* self, POS_e from, comparator_ft filter, void
 	}
 	else
 	{
-		if (p = pList->cur)
+		if (pNode = pList->cur)
 		{
 			if (from == HEAD)
 			{
 				pList->cur = pList->cur->next;
 			}
-			else
+			else if (from == TAIL)
 			{
 				pList->cur = pList->cur->prev;
 			}
+			else
+			{
+				pList->cur = NULL;
+			}
 		}
 	}
-	return p;
+	return pNode;
 }
 
+void vdatalist_Travel (void* self, POS_e from, todo_ft todo)
+{
+	VDataList* pList = (VDataList*) self;
+	VDataNode* pNode;
+
+	if (todo)
+	{
+		if (from==HEAD)
+		{
+			pNode = pList->head;
+			while (pNode)
+			{
+				todo (pNode->arg);
+				pNode = pNode->next;
+			}
+		}
+		else if (from==TAIL)
+		{
+			pNode = pList->tail;
+			while (pNode)
+			{
+				todo (pNode->arg);
+				pNode = pNode->prev;
+			}
+		}
+	}
+	return ;
+}
 
 
 
@@ -412,6 +449,9 @@ VDataTree* vdatatree_create  ()
 	pTree->insert      = vdatatree_Insert;
 	pTree->search      = vdatatree_Search;
 	pTree->delete      = vdatatree_Delete;
+	pTree->seek        = vdatatree_Seek;
+	pTree->travel      = vdatatree_Travel;
+	pTree->foreach     = vdatatree_Foreach;
 	/* data. */
 	pthread_mutex_init (&pTree->m_mutex, NULL);
 
@@ -439,7 +479,7 @@ void vdatatree_Unlock (void* self)
 
 
 
-VDataNode* vdatatree_Insert (void* self, comparator_ft comp, void* arg)
+VDataNode* vdatatree_Insert (void* self, comp_ft comp, void* arg)
 {
 	if (!comp)
 	{
@@ -453,43 +493,43 @@ VDataNode* vdatatree_Insert (void* self, comparator_ft comp, void* arg)
 	}
 	pTree->size++;
 
-	VDataNode* p = pTree->head;
-	if (!p)
+	VDataNode* pNode = pTree->head;
+	if (!pNode)
 	{
 		pTree->head = node;
 	}
 	else
 	{
-		while (p)
+		while (pNode)
 		{
 			/* |            Node            |
 			 * |          /      \          |
 			 * |     L:False     R:True     | */
-			if(comp(p->arg, arg)==OK)
+			if(comp(pNode->arg, arg)==OK)
 			{
-				if (!p->R)
+				if (!pNode->R)
 				{
-					p->R = node;
-					node->P = p;
+					pNode->R = node;
+					node->F = pNode;
 					break;
 				}
 				else
 				{
-					p = p->R;
+					pNode = pNode->R;
 					continue;
 				}
 			}
 			else
 			{
-				if (!p->L)
+				if (!pNode->L)
 				{
-					p->L = node;
-					node->P = p;
+					pNode->L = node;
+					node->F = pNode;
 					break;
 				}
 				else
 				{
-					p = p->L;
+					pNode = pNode->L;
 					continue;
 				}
 			}
@@ -498,115 +538,299 @@ VDataNode* vdatatree_Insert (void* self, comparator_ft comp, void* arg)
 	return node;
 }
 
-void vdatatree_Travel (void* self, VDataNode* node, todo_ft todo)
+void vdatatree_Travel (void* self, todo_ft todo)
 {
 	VDataTree* pTree = (VDataTree*) self;
-
-	if (node && todo)
+	if (todo)
 	{
-		vdatatree_Travel (pTree, node->L, todo);
-		todo (node->arg);
-		vdatatree_Travel (pTree, node->R, todo);
+		VDataNode* pNode = _vdatatree_MostL (self, pTree->head);
+		if (pNode)
+		{
+			todo (pNode->arg);
+		}
+		while (pNode = _vdatatree_Next(self, pNode))
+		{
+			todo (pNode->arg);
+		}
 	}
 	return ;
 }
 
-VDataNode* vdatatree_FindMax (void* self, VDataNode* node)
+VDataNode* _vdatatree_MostR (void* self, VDataNode* node)
 {
-	VDataTree* pTree = (VDataTree*) self;
-	if (!node)
+	VDataNode* pNode=node;
+	if (pNode)
+	{
+		while (pNode->R)
+		{
+			pNode = pNode->R;
+		}
+	}
+	return pNode;
+}
+
+VDataNode* _vdatatree_MostL (void* self, VDataNode* node)
+{
+	VDataNode* pNode=node;
+	if (pNode)
+	{
+		while (pNode->L)
+		{
+			pNode = pNode->L;
+		}
+	}
+	return pNode;
+}
+
+VDataNode* _vdatatree_Next (void* self, VDataNode* node)
+{
+	VDataNode* pNode = node;
+	if (!pNode)
 	{
 		return NULL;
 	}
 
-	if (node->R)
+	if (pNode->R)
 	{
-		return vdatatree_FindMax (pTree, node->R);
+		return _vdatatree_MostL (self, pNode->R);
 	}
 	else
 	{
-		return node;
+		VDataNode* parent = pNode->F;
+		while (parent && pNode==parent->R)
+		{
+			pNode = parent;
+			parent = parent->F;
+		}
+		return parent;
 	}
 }
 
-VDataNode* vdatatree_FindMin (void* self, VDataNode* node)
+VDataNode* _vdatatree_Prev (void* self, VDataNode* node)
 {
-	VDataTree* pTree = (VDataTree*) self;
-	if (!node)
+	VDataNode* pNode=node;
+	if (!pNode)
 	{
 		return NULL;
 	}
 
-	if (node->L)
+	if (pNode->L)
 	{
-		return vdatatree_FindMin (pTree, node->L);
+		return _vdatatree_MostR (self, pNode->L);
 	}
 	else
 	{
-		return node;
+		VDataNode* parent = pNode->F;
+		while (parent && pNode==parent->L)
+		{
+			pNode = parent;
+			parent = parent->F;
+		}
+		return parent;
 	}
 }
 
-VDataNode* vdatatree_Find (void* self, VDataNode* node, comparator_ft equal, void* arg)
+VDataNode* vdatatree_Search (void* self, comp_ft equal, void* arg)
 {
 	VDataTree* pTree = (VDataTree*) self;
-	if (!node)
+	VDataNode* pNode=pTree->head;
+	if (!pNode || !equal)
 	{
 		return NULL;
 	}
-	VDataNode* p=NULL;
-	if (equal)
+
+	while (pNode)
 	{
-		int ret = equal (node->arg, arg);
-		if (ret==OK)
+		int ret=equal(pNode->arg, arg);
+		if (ret==0)
 		{
 			/* Found. */
-			p = node;
+			break;
 		}
 		else if (ret<0)
 		{
 			/* Find L. */
-			p = vdatatree_Find (pTree, node->L, equal, arg);
+			pNode = pNode->L;
 		}
 		else if (ret>0)
 		{
 			/* Find R. */
-			p = vdatatree_Find (pTree, node->R, equal, arg);
+			pNode = pNode->R;
 		}
 	}
-	return p;
+	return pNode;
 }
 
-VDataNode* vdatatree_Search (void* self, comparator_ft comp, void* arg)
+int _vdatatree_IsLorR (void* self, VDataNode* node)
 {
-	if (!comp)
+	if (node->F)
 	{
-		return NULL;
-	}
-	VDataTree* pTree = (VDataTree*) self;
-	VDataNode* p = pTree->head;
-	while (p)
-	{
-		break;
-	}
-	return p;
-}
-
-void vdatatree_Delete (void* self, VDataNode* node, destructor_ft del)
-{
-	VDataTree* pTree = (VDataTree*) self;
-	if (node)
-	{
-		if (del)
+		if (node==node->F->L)
 		{
-			del(node->arg);
+			return -1;
 		}
-		vdatanode_destroy (node);
+		else if (node==node->F->R)
+		{
+			return 1;
+		}
+	}
+	return 0;
+}
+
+void vdatatree_Delete (void* self, VDataNode* node, dtor_ft del)
+{
+	VDataTree* pTree = (VDataTree*) self;
+	VDataNode* pNode = node;
+	if (!pNode)
+	{
+		return ;
+	}
+
+	void* pArg = pNode->arg;
+	while (pNode)
+	{
+		if (!pNode->L && !pNode->R)
+		{
+			/* 0 child. */
+			if (_vdatatree_IsLorR(self, pNode)<0)
+			{
+				pNode->F->L = NULL;
+			}
+			else if (_vdatatree_IsLorR(self, pNode)>0)
+			{
+				pNode->F->R = NULL;
+			}
+			else if (_vdatatree_IsLorR(self, pNode)==0)
+			{
+				pTree->head = NULL;
+			}
+			vdatanode_destroy (pNode);
+			pNode = NULL;
+		}
+		else if (pNode->L && pNode->R)
+		{
+			/* 2 children. */
+			VDataNode* pCandidate = _vdatatree_MostR (self, pNode->L);
+			pNode->arg = pCandidate->arg;
+			pNode = pCandidate;
+		}
+		else
+		{
+			/* 1 child. */
+			if (pNode->L)
+			{
+				if (_vdatatree_IsLorR(self, pNode)<0)
+				{
+					pNode->F->L = pNode->L;
+					pNode->L->F = pNode->F;
+				}
+				else if (_vdatatree_IsLorR(self, pNode)>0)
+				{
+					pNode->F->R = pNode->L;
+					pNode->L->F = pNode->F;
+				}
+				else if (_vdatatree_IsLorR(self, pNode)==0)
+				{
+					pTree->head = pNode->L;
+					pNode->L->F = NULL;
+				}
+			}
+			else if (pNode->R)
+			{
+				if (_vdatatree_IsLorR(self, pNode)<0)
+				{
+					pNode->F->L = pNode->R;
+					pNode->R->F = pNode->F;
+				}
+				else if (_vdatatree_IsLorR(self, pNode)>0)
+				{
+					pNode->F->R = pNode->R;
+					pNode->R->F = pNode->F;
+				}
+				else if (_vdatatree_IsLorR(self, pNode)==0)
+				{
+					pTree->head = pNode->R;
+					pNode->R->F = NULL;
+				}
+			}
+			vdatanode_destroy (pNode);
+			pNode = NULL;
+		}
+	}
+
+	if (del)
+	{
+		del(pArg);
 	}
 	return ;
 }
 
 
+void vdatatree_Seek (void* self, POS_e from)
+{
+	VDataTree* pTree = (VDataTree*) self;
+	VDataNode* pNode = NULL;
+
+	if (from==MIN)
+	{
+		pNode = _vdatatree_MostL (self, pTree->head);
+		pTree->cur = pNode;
+	}
+	else if (from==MAX)
+	{
+		pNode = _vdatatree_MostR (self, pTree->head);
+		pTree->cur = pNode;
+	}
+	return ;
+}
+
+VDataNode* vdatatree_Foreach (void* self, POS_e from, comp_ft filter, void* arg)
+{
+	VDataTree* pTree = (VDataTree*) self;
+	VDataNode* pNode = NULL;
+	
+	if (filter && arg)
+	{
+		while (pNode = pTree->cur)
+		{
+			if (from == MIN)
+			{
+				pTree->cur = _vdatatree_Next(self, pNode);
+			}
+			else if (from == MAX)
+			{
+				pTree->cur = _vdatatree_Prev(self, pNode);
+			}
+			else
+			{
+				pTree->cur = NULL;
+			}
+			if (filter(pNode->arg, arg)==OK)
+			{
+				break;
+			}
+		}
+	}
+	else
+	{
+		if (pNode = pTree->cur)
+		{
+			if (from == MIN)
+			{
+				pTree->cur = _vdatatree_Next(self, pNode);
+			}
+			else if (from == MAX)
+			{
+				pTree->cur = _vdatatree_Prev(self, pNode);
+			}
+			else
+			{
+				pTree->cur = NULL;
+			}
+		}
+	}
+	return pNode;
+}
 
 
 

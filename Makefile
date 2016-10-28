@@ -1,5 +1,6 @@
 
 SRC= main.c \
+	 sample.c \
 	 vCommon.c \
 	 vLog.c \
 	 vData.c \
