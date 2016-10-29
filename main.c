@@ -12,20 +12,36 @@
 /*************************************************************************************/
 /*************************************************************************************/
 
+/*
+ * TODO:
+ *
+ * 1, Log File Size
+ *
+ * FIXME:
+ *
+ * 1. naming.
+ *
+ */
+
+
+/*************************************************************************************/
+/*************************************************************************************/
+ 
 VLog* Log;
 
 #define vlog(x, ...)        Log->print(   Log, __func__, __LINE__,    "      "    , x, ##__VA_ARGS__)
+#define vtag(y, x, ...)     Log->print(   Log, __func__, __LINE__,           y    , x, ##__VA_ARGS__)
 
 void init (void)
 {
 	verr_init (3, "err.log", "./log/");
-	Log = vlog_create (  3,     "txt", "./log/", "YMD h:m:s.u | F20():L4 | S | V",  "YMD h:m:s.u | F20():L4 | S | V");
-	vlog ("[MEM] mem=%llu\n", vc_getMemUsage());
+	Log = vlog_create (  3,     "txt", "./log/", "M/D h:m:s | F20():L4 | S8 | V",  "M/D h:m:s | F20():L4 | S8 | V");
+	vtag ("MEM", "mem=%llu\n", vc_getMemUsage());
 }
 
 void deinit (void)
 {
-	vlog ("[MEM] mem=%llu\n", vc_getMemUsage());
+	vtag ("MEM", "mem=%llu\n", vc_getMemUsage());
 	verr_deinit ();
 	vlog_destroy (Log);
 }
@@ -37,30 +53,19 @@ static int _equal (void* itemInQueue, void* arg)
 {
 	int nItem = *(int*)itemInQueue;
 	int nArg = *(int*)arg;
-	if (nItem == nArg)
-	{
-		/* Found. */
-		return OK;
-	}
-	else if (nArg<nItem)
-	{
-		/* Find L. */
-		return nArg-nItem;
-	}
-	else if (nArg>nItem)
-	{
-		/* Find R. */
-		return nArg-nItem;
-	}
+	/*  0: found.
+	 *  -: find L.
+	 *  +: find R.  */
+	return nArg-nItem;
 }
 
 static int _print (void* arg)
 {
-	vlog ("[TRAVEL]  arg=%d\n", *(int*)arg);
+	vtag ("TRAVEL", "arg=%d\n", *(int*)arg);
 	return 0;
 }
 
-static int _smallerThan (void* itemInQueue, void* arg)
+static int _lessThan (void* itemInQueue, void* arg)
 {
 	if (*(int*)itemInQueue < *(int*)arg)
 	{
@@ -72,17 +77,6 @@ static int _smallerThan (void* itemInQueue, void* arg)
 	}
 }
 
-static int _increment (void* itemInQueue, void* arg)
-{
-	if (*(int*)itemInQueue < *(int*)arg)
-	{
-		return OK;
-	}
-	else
-	{
-		return FAIL;
-	}
-}
 
 void sample_datatree ()
 {
@@ -91,35 +85,33 @@ void sample_datatree ()
 	VDataTree* Tree = vdatatree_create ();
 
 	/* Insert. */
-	p = Tree->insert (Tree, _increment, int_new(8));
-	p = Tree->insert (Tree, _increment, int_new(4));
-	p = Tree->insert (Tree, _increment, int_new(2));
-	p = Tree->insert (Tree, _increment, int_new(6));
-	p = Tree->insert (Tree, _increment, int_new(12));
-	p = Tree->insert (Tree, _increment, int_new(10));
-	p = Tree->insert (Tree, _increment, int_new(14));
+	p = Tree->insert (Tree, _lessThan, int_new(8));
+	p = Tree->insert (Tree, _lessThan, int_new(4));
+	p = Tree->insert (Tree, _lessThan, int_new(2));
+	p = Tree->insert (Tree, _lessThan, int_new(6));
+	p = Tree->insert (Tree, _lessThan, int_new(12));
+	p = Tree->insert (Tree, _lessThan, int_new(10));
+	p = Tree->insert (Tree, _lessThan, int_new(14));
+
+	/* Travel. */
 	Tree->travel (Tree, _print);
 	
 	/* Search. */
 	p = Tree->search (Tree, _equal, pItem=int_new(7));
-	if (p)
-	{
-		vlog ("[Search] id=[%2d], arg=%d\n", p->id, *(int*)p->arg);
-	}
-	else
-	{
-		vlog ("[Search] none.\n");
+	if (p) {
+		vtag ("Search", "id=[%2d], arg=%d  (Item=%d)\n", p->id, *(int*)p->arg, *pItem);
+	} else {
+		vtag ("Search", "none.  (Item=%d)\n", *pItem);
 	}
 	int_del (pItem);
 
 
 	/* Delete. */
-	Tree->seek (Tree, MAX);
-	while (p = Tree->foreach (Tree, MAX, NULL, NULL))
+	Tree->seek (Tree, MOST_R);
+	while ((p = Tree->foreach (Tree, MOST_R, NULL, NULL)))
 	{
+		vtag ("Delete", "id=[%2d], arg=%d\n", p->id, *(int*)p->arg);
 		Tree->delete (Tree, p, (dtor_ft)int_del);
-		printf ("\n");
-		Tree->travel (Tree, _print);
 	}
 
 	vdatatree_destroy (Tree);
@@ -134,34 +126,34 @@ void sample_datalist ()
 	VDataList* List = vdatalist_create ();
 	
 	/* Insert */
-	p = List->insert (List, HEAD, _increment, int_new(3));
-	p = List->insert (List, HEAD, _increment, int_new(2));
-	p = List->insert (List, HEAD, _increment, int_new(9));
-	p = List->insert (List, HEAD, _increment, int_new(6));
-	p = List->insert (List, HEAD, _increment, int_new(1));
-	p = List->insert (List, HEAD, _increment, int_new(4));
-	vlog ("[INFO] size=%d\n", List->size);
+	p = List->insert (List, HEAD, _lessThan, int_new(3));
+	p = List->insert (List, HEAD, _lessThan, int_new(2));
+	p = List->insert (List, HEAD, _lessThan, int_new(9));
+	p = List->insert (List, HEAD, _lessThan, int_new(6));
+	p = List->insert (List, HEAD, _lessThan, int_new(1));
+	p = List->insert (List, HEAD, _lessThan, int_new(4));
+
+	/* Travel */
 	List->travel (List, HEAD, _print);
 
 	/* Search */
 	p = List->search (List, HEAD, _equal, pItem=int_new(2));
-	if (p)
-	{
-		vlog ("[SEARCH] id=%2d, arg=%d\n", p->id, *(int*)p->arg);
-	}
-	else
-	{
-		vlog ("[SEARCH] none.\n");
+	if (p) {
+		vtag ("Search", "id=[%2d], arg=%d  (Item=%d)\n", p->id, *(int*)p->arg, *pItem);
+	} else {
+		vtag ("Search", "none.  (Item=%d)\n", *pItem);
 	}
 	int_del(pItem);
 
 	/* Foreach & Delete */
 	List->seek (List, List->head);
-	while(p = List->foreach (List, HEAD, _smallerThan, int_new(100)))
+	pItem=int_new(100);
+	while((p = List->foreach (List, HEAD, _lessThan, pItem)))
 	{
-		vlog ("[FOREACH] id=%2d, arg=%d\n", p->id, *(int*)p->arg);
+		vtag ("Delete", "id=%2d, arg=%d\n", p->id, *(int*)p->arg);
 		List->delete (List, p, (dtor_ft)int_del);
 	}
+	int_del(pItem);
 
 	vdatalist_destroy (List);
 	
@@ -184,7 +176,7 @@ int main (int argc, char* argv[])
 
 	init ();
 
-#if 0
+#if 1
 	sample_datatree ();
 #else
 	sample_datalist ();

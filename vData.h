@@ -25,7 +25,7 @@ typedef struct VDataNode{
 
 int*          int_new               (int n);
 void          int_del               (int* p);
-u64t          vdatanode_newId       ();
+u64t          vdatanode_newId       (void);
 VDataNode*    vdatanode_create      (void* arg);
 void          vdatanode_destroy     (VDataNode* node);
 
@@ -34,20 +34,17 @@ void          vdatanode_destroy     (VDataNode* node);
 /*************************************************************************************/
 
 typedef enum {
-	HEAD = 1,
-	TAIL = 2,
-	MIN = 3,
-	MAX = 4,
-	DLR  =11, /* pre-order */
-	LDR = 12, /* middle-order */
-	LRD = 13, /* post-order */
+	HEAD    = 1,
+	TAIL    = 2,
+	MOST_L  = 3,
+	MOST_R  = 4,
 } POS_e;
 
 typedef struct {
 	/* method. */
 	void          (*lock)        (void* self);
 	void          (*unlock)      (void* self);
-	VDataNode*    (*insert)      (void* self, POS_e from, comp_ft comp, void* arg);
+	VDataNode*    (*insert)      (void* self, POS_e from, comp_ft less, void* arg);
 	VDataNode*    (*search)      (void* self, POS_e from, comp_ft equal, void* arg);
 	void          (*delete)      (void* self, VDataNode* node, dtor_ft del);
 	void          (*seek)        (void* self, VDataNode* node);
@@ -55,20 +52,20 @@ typedef struct {
     void          (*travel)      (void* self, POS_e from, todo_ft todo);
 
 	/* data. */
-	int size;
-	VDataNode* cur;
-	VDataNode* head;
-	VDataNode* tail;
-	vmutex_t   m_mutex;
+	int           size;
+	VDataNode*    cur;
+	VDataNode*    head;
+	VDataNode*    tail;
+	vmutex_t      mutex;
 } VDataList;
 
 
-VDataList*    vdatalist_create      ();
+VDataList*    vdatalist_create      (void);
 void          vdatalist_destroy     (VDataList* pList);
 void          vdatalist_Lock        (void* self);
 void          vdatalist_Unlock      (void* self);
 
-VDataNode*    vdatalist_Insert      (void* self, POS_e from, comp_ft comp, void* arg);
+VDataNode*    vdatalist_Insert      (void* self, POS_e from, comp_ft less, void* arg);
 VDataNode*    vdatalist_Search      (void* self, POS_e from, comp_ft equal, void* arg);
 void          vdatalist_Delete      (void* self, VDataNode* node, dtor_ft del);
 void          vdatalist_Seek        (void* self, VDataNode* node);
@@ -94,13 +91,13 @@ typedef struct {
     void          (*travel)      (void* self, todo_ft todo);
 
 	/* data. */
-	int size;
-	VDataNode* cur;
-	VDataNode* head;
-	vmutex_t   m_mutex;
+	int           size;
+	VDataNode*    cur;
+	VDataNode*    head;
+	vmutex_t      mutex;
 } VDataTree;
 
-VDataTree*    vdatatree_create      ();
+VDataTree*    vdatatree_create      (void);
 void          vdatatree_destroy     (VDataTree* pTree);
 void          vdatatree_Lock        (void* self);
 void          vdatatree_Unlock      (void* self);
