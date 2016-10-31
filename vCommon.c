@@ -73,6 +73,11 @@ int fd_close (int fd)
 	return close (fd);
 }
 
+int fd_rename (const char *oldPath, const char* newPath)
+{
+	return rename (oldPath, newPath);
+}
+
 int fd_isFileExist (const char *path)
 {
 	struct stat s;
@@ -169,9 +174,14 @@ out:
 
 
 
+void vzero (void* dest, int size)
+{
+	memset (dest, 0, size);
+	return ;
+}
 
 
-void vc_msleep (int msec)
+void vmsleep (int msec)
 {
 	int sec;
 	int usec;

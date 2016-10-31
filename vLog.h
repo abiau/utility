@@ -13,6 +13,7 @@
 #include <sys/stat.h> 
 #include <fcntl.h> 
 #include <errno.h>
+#include <limits.h> 
 
 #include "vDefine.h"
 #include "vCommon.h"
@@ -36,24 +37,44 @@
 /***************************************************************************/
 /***************************************************************************/
 
+typedef enum {
+	PATH = 1,
+	SIZE = 2,
+	ROTATE = 3,
+} SetVLogType_e;
+
 /* VLOG */
 typedef struct {
 	/* method. */
-	void             (*print) (void* self, const char* szFunc, int nLine, ...);
+	void    (*print)     (void* self, const char* szFunc, int nLine, ...);
+	void    (*set)       (void* self, SetVLogType_e type, ...);
+    void    (*setPath)   (void* self, char* folder, char* file);
+    void    (*setSize)   (void* self, char* str);
+    void    (*setRotate) (void* self, char* str);
 
 	/* data. */
-	vmutex_t         m_mutex;
-	int              m_mode;
-	char             m_path     [LEN256];
-	char             m_fmtScreen[LEN64];
-	char             m_fmtFile  [LEN64];
-	char             m_buf      [LEN2048];
+	vmutex_t         mutex;
+	int              mode;
+	n64t             nFileSize;
+	n64t             MaxFileSize;
+	n64t             lastTs;
+	n64t             MaxRotateMs;
+	char             folder   [LEN128];
+	char             path     [LEN256];
+	char             FmtScreen[LEN64];
+	char             FmtFile  [LEN64];
+	char             buf      [LEN2048];
 } VLog;
 
 extern VLog*  LOG_ERRNO;
 
-VLog* vlog_create   (int mode, char* file, char* folder, char* fmtScreen, char* fmtFile);
-void  vlog_destroy  (VLog* pLog);
+VLog* vlog_create       (int mode, char* folder, char* file, char* FmtScreen, char* FmtFile);
+void  vlog_destroy      (VLog* pLog);
+void  vlog_print        (void* self, const char* szFunc, int nLine, ...);
+void  vlog_set          (void* self, SetVLogType_e type, ...);
+void  vlog_setPath      (void* self, char* folder, char* file);
+void  vlog_setSize      (void* self, char* str);
+void  vlog_setRotate    (void* self, char* str);
 
 
 /* VTIMER */
@@ -63,11 +84,11 @@ typedef struct {
 	u64t             (*diffms)    (void* self);
 	u64t             (*diffus)    (void* self);
 	u64t             (*now)       (void);
-	char*            (*nowString) (char* buf, int bufLen, char* fmt);
-	char*            (*tsString)  (char* buf, int bufLen, char* fmt, u64t ms);
+	char*            (*nowStr)    (char* buf, int bufLen, char* fmt);
+	char*            (*tsStr)     (char* buf, int bufLen, char* fmt, u64t ms);
 	/* data. */
-	pthread_mutex_t  m_mutex;
-	struct timeval   m_tv;
+	pthread_mutex_t  mutex;
+	struct timeval   tv;
 } VTimer;
 
 VTimer* vtimer_create  ();
@@ -76,9 +97,9 @@ void    vtimer_destroy (VTimer* pTimer);
 
 typedef struct {
 	u64t ts;
-	int  yy;
-	int  mm;
-	int  dd;
+	int  Y;
+	int  M;
+	int  D;
 	int  h;
 	int  m;
 	int  s;

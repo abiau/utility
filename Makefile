@@ -16,7 +16,7 @@ OUT = libvutil.a
 EXE = exe
  
 # include directories
-INC = -I. 
+INC = -I.
 # C compiler flags (-g -O2 -Wall)
 CCFLAGS = -g -O0 -Wall -Wno-unused-variable
 # compiler

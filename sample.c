@@ -33,7 +33,7 @@ void sample_udpClient ()
 	vC ("skt=%d\n", skt);
 	while (1)
 	{
-		vc_msleep (1000);
+		vmsleep (1000);
 		Client->write (Client, skt, buf, sizeof(buf));
 		vC (buf);
 	}
@@ -73,7 +73,7 @@ void sample_tcpClient ()
 	vC ("skt=%d\n", skt);
 	while (1)
 	{
-		vc_msleep (1000);
+		vmsleep (1000);
 		Client->write (Client, skt, buf, sizeof(buf));
 		vC ("%s\n", buf);
 	}
@@ -112,14 +112,21 @@ void sample_tcpServer ()
 void sample_log ()
 {
 	VTimer* Timer     = vtimer_create ();
-	VLog*   LogString = vlog_create (3, "txt", "./log/", "YMD h:m:s.u | F10():L4 | S | V",  "YMD h:m:s.u | F10():L4 | S | V");
-	int i;
-	char buf[128];
+	VLog*   LogString = vlog_create (3, "./log/", "txt", "YMD h:m:s.u | F10():L4 | S | V",  "YMD h:m:s.u | F10():L4 | S | V");
+	LogString->setPath   (LogString, "./log/", "txt");
+	LogString->setSize   (LogString, "10M");
+	LogString->setRotate (LogString, "1D");
+
+	int  i;
+	char timeString[32];
+	char buf[32];
 
 	Timer->resume(Timer);
-	LogString->print(LogString, __func__, __LINE__, "-----", "%s\n", Timer->nowString(buf, sizeof(buf), "YMD h:m:s.u"));
-	for (i=0; i<1000; i++)
+	Timer->nowStr(timeString, sizeof(timeString), "YMD h:m:s.u");
+	LogString->print(LogString, __func__, __LINE__, "-----", "%s\n", timeString);
+	for (i=0; i<30; i++)
 	{
+		vmsleep (300);
 		memset (buf, 65+(i%26), sizeof(buf));
 		buf[sizeof(buf)-1] = '\0';
 		LogString->print(LogString, __func__, __LINE__, "     ", "%s\n", buf);
@@ -129,6 +136,118 @@ void sample_log ()
 }
 
 
+
+
+static int _equal (void* itemInQueue, void* arg)
+{
+	int nItem = *(int*)itemInQueue;
+	int nArg = *(int*)arg;
+	/*  0: found.
+	 *  -: find L.
+	 *  +: find R.  */
+	return nArg-nItem;
+}
+
+static int _print (void* arg)
+{
+	vtag ("Travel", "arg=%d\n", *(int*)arg);
+	return 0;
+}
+
+static int _lessThan (void* itemInQueue, void* arg)
+{
+	if (*(int*)itemInQueue < *(int*)arg)
+	{
+		return OK;
+	}
+	else
+	{
+		return FAIL;
+	}
+}
+
+
+void sample_datatree ()
+{
+	int* pItem;
+	VDataNode* p;
+	VDataTree* Tree = vdatatree_create ();
+
+	/* Insert. */
+	p = Tree->insert (Tree, _lessThan, int_new(8));
+	p = Tree->insert (Tree, _lessThan, int_new(4));
+	p = Tree->insert (Tree, _lessThan, int_new(2));
+	p = Tree->insert (Tree, _lessThan, int_new(6));
+	p = Tree->insert (Tree, _lessThan, int_new(12));
+	p = Tree->insert (Tree, _lessThan, int_new(10));
+	p = Tree->insert (Tree, _lessThan, int_new(14));
+
+	/* Travel. */
+	Tree->travel (Tree, _print);
+	
+	/* Search. */
+	p = Tree->search (Tree, _equal, pItem=int_new(7));
+	if (p) {
+		vtag ("Search", "id=[%2d], arg=%d  (Item=%d)\n", p->id, *(int*)p->arg, *pItem);
+	} else {
+		vtag ("Search", "none.  (Item=%d)\n", *pItem);
+	}
+	int_del (pItem);
+
+
+	/* Delete. */
+	Tree->seek (Tree, MOST_R);
+	while ((p = Tree->foreach (Tree, MOST_R, NULL, NULL)))
+	{
+		vtag ("Delete", "id=[%2d], arg=%d\n", p->id, *(int*)p->arg);
+		Tree->delete (Tree, p, (dtor_ft)int_del);
+	}
+
+	vdatatree_destroy (Tree);
+}
+
+
+
+void sample_datalist ()
+{
+	int* pItem;
+	VDataNode* p;
+	VDataList* List = vdatalist_create ();
+	
+	/* Insert */
+	p = List->insert (List, HEAD, _lessThan, int_new(3));
+	p = List->insert (List, HEAD, _lessThan, int_new(2));
+	p = List->insert (List, HEAD, _lessThan, int_new(9));
+	p = List->insert (List, HEAD, _lessThan, int_new(6));
+	p = List->insert (List, HEAD, _lessThan, int_new(1));
+	p = List->insert (List, HEAD, _lessThan, int_new(4));
+
+	/* Travel */
+	List->travel (List, HEAD, _print);
+
+	/* Search */
+	p = List->search (List, HEAD, _equal, pItem=int_new(2));
+	if (p) {
+		vtag ("Search", "id=[%2d], arg=%d  (Item=%d)\n", p->id, *(int*)p->arg, *pItem);
+	} else {
+		vtag ("Search", "none.  (Item=%d)\n", *pItem);
+	}
+	int_del(pItem);
+
+	/* Foreach & Delete */
+	List->seek (List, List->head);
+	pItem=int_new(100);
+	while((p = List->foreach (List, HEAD, _lessThan, pItem)))
+	{
+		vtag ("Delete", "id=%2d, arg=%d\n", p->id, *(int*)p->arg);
+		List->delete (List, p, (dtor_ft)int_del);
+	}
+	int_del(pItem);
+
+	vdatalist_destroy (List);
+	
+	return ;
+}
 
 
 
