@@ -8,6 +8,7 @@ typedef          long long  n64t;
 typedef unsigned int        u32t;
 typedef          int        n32t;
 typedef pthread_mutex_t     vmutex_t;
+typedef pthread_t           vthread_t;
 
 typedef void (*void_fn)();
 typedef  int (*i_fn)();

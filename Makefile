@@ -5,6 +5,8 @@ EXE_SRC = \
 		  sample.c
 
 LIB_SRC = \
+		  vParser.c \
+		  vTask.c \
 		  vCommon.c \
 		  vLog.c \
 		  vData.c \
@@ -12,7 +14,7 @@ LIB_SRC = \
  
 
 OBJ = $(LIB_SRC:.c=.o)
-OUT = libvutil.a
+OUT = libvUtil.a
 EXE = exe
  
 # include directories
@@ -34,8 +36,8 @@ LDFLAGS = -g -O0
  
 -$(OUT): $(OBJ)
 	ar rcs $(OUT) $(OBJ)
-	$(CC) -o $(EXE) $(CCFLAGS) $(EXE_SRC) $(OUT)
 	rm -rf *.o
+	$(CC) -o $(EXE) $(CCFLAGS) $(EXE_SRC) $(LIB) $(OUT)
  
 clean:
 	rm -rf $(EXE) 

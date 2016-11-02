@@ -1,7 +1,7 @@
 
 #include "vLog.h"
 
-VLog* LOG_ERRNO=NULL;
+VLog* VUTILLOG=NULL;
 
 /***********************************************************************************/
 /***********************************************************************************/
@@ -22,7 +22,7 @@ static char*      vtimer_tsString   (char* buf, int bufLen, char* fmt, u64t ts);
 
 static int        _nDigit           (const char* str);
 static DateTime   _TS_to_DT         (u64t ts);
-static u64t       _STR_to_SIZE      (char* str);
+static u64t       _STR_to_BYTE      (char* str);
 static u64t       _STR_to_MS        (char* str);
 static char*      _FMT_to_STR       (char* out, int len, const char* fmt, u64t ts, const char* szFunc, int nLine, va_list ap);
 static char*      _FMT_to_STRxColor (char* str, int size);
@@ -57,7 +57,6 @@ void vtimer_destroy (VTimer* pTimer)
 	return ;
 }
 
-
 static u64t vtimer_now (void)
 {
 	struct timeval tv;
@@ -90,21 +89,7 @@ static void vtimer_resume (void* self)
 
 static u64t vtimer_diffms (void* self)
 {
-	VTimer* pTimer = (VTimer*) self;
-	struct timeval  now;
-    u64t           sec=0;
-    u64t           usec=0;
-
-    gettimeofday (&now, NULL);
-    sec = (now.tv_sec) - ((pTimer->tv).tv_sec);
-    usec = (now.tv_usec) - ((pTimer->tv).tv_usec);
-    if ( usec <0 )
-	{
-        sec--;
-        usec += 1000000;
-    }
-    u64t totalMsec = (usec + (sec*1000000)) >> 10;  // u.sec change to m.sec
-    return totalMsec;
+    return vtimer_diffus(self)>>10;
 }
 
 static u64t vtimer_diffus (void* self)
@@ -122,9 +107,8 @@ static u64t vtimer_diffus (void* self)
         sec--;
         usec += 1000000;
     }
-    u64t totalUsec = (usec + (sec*1000000)) ;  // u.sec change to m.sec
     
-	return totalUsec;
+	return (usec + (sec*1000000)) ;
 }
 
 
@@ -243,7 +227,7 @@ void vlog_setSize (void* self, char* str)
 	VLog* pLog = (VLog*) self;
 
 	pthread_mutex_lock (&pLog->mutex);
-	pLog->MaxFileSize = _STR_to_SIZE(str);
+	pLog->MaxFileSize = _STR_to_BYTE(str);
 	if (pLog->MaxFileSize <= (1<<10))
 	{
 		pLog->MaxFileSize = 1 << 30;
@@ -468,7 +452,7 @@ static u64t _STR_to_MS (char* str)
 	return ms;
 }
 
-u64t _STR_to_SIZE (char* str)
+u64t _STR_to_BYTE (char* str)
 {
 	u64t size=0;
 	char* p = str;

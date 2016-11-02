@@ -235,7 +235,7 @@ void sample_datalist ()
 	int_del(pItem);
 
 	/* Foreach & Delete */
-	List->seek (List, List->head);
+	List->seek (List, HEAD);
 	pItem=int_new(100);
 	while((p = List->foreach (List, HEAD, _lessThan, pItem)))
 	{

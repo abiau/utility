@@ -8,6 +8,7 @@
 #include "vLog.h"
 #include "vNet.h"
 #include "vData.h"
+#include "vTask.h"
 
 /*************************************************************************************/
 /*************************************************************************************/
@@ -29,26 +30,22 @@
  
 VLog* Log;
 
-#define vlog(x, ...)        Log->print(   Log, __func__, __LINE__,    "      "    , x, ##__VA_ARGS__)
-#define vtag(y, x, ...)     Log->print(   Log, __func__, __LINE__,           y    , x, ##__VA_ARGS__)
+#define vlog(x, ...)      Log->print(   Log, __func__, __LINE__,    "      "    , x, ##__VA_ARGS__)
+#define vtag(y, x, ...)   Log->print(   Log, __func__, __LINE__,           y    , x, ##__VA_ARGS__)
 
 void init (void)
 {
-	verr_init (3, "./log/", "err.log");
-	Log = vlog_create (  3,     "txt", "./log/", "M/D h:m:s | F20():L4 | S8 | V",  "M/D h:m:s | F20():L4 | S8 | V");
+	vutillog_init (3, "./log/", "vutil.log");
+	Log = vlog_create (  3,     "txt", "./log/", "h:m:s | F15():L4 | S6 | V",  "h:m:s | F15():L4 | S6 | V");
 	vtag ("MEM", "mem=%llu\n", vc_getMemUsage());
 }
 
 void deinit (void)
 {
 	vtag ("MEM", "mem=%llu\n", vc_getMemUsage());
-	verr_deinit ();
+	vutillog_deinit ();
 	vlog_destroy (Log);
 }
-
-/*************************************************************************************/
-/*************************************************************************************/
-
 
 /*************************************************************************************/
 /*************************************************************************************/
@@ -60,19 +57,46 @@ extern void sample_tcpServer ();
 extern void	sample_tcpClient ();
 extern void sample_datalist  ();
 extern void sample_datatree  ();
+extern void sample_task ();
+
+/*************************************************************************************/
+/*************************************************************************************/
+
+
+void sample_task ()
+{
+	VTaskMng* TaskMng = vtaskmng_create ();
+	//vmsleep (2000);
+	//TaskMng->join (TaskMng);
+	TaskMng->detach (TaskMng);
+	vtaskmng_destroy (TaskMng);
+	return ;
+}
+
+
+
+
+
+
+
+/*************************************************************************************/
+/*************************************************************************************/
 
 int main (int argc, char* argv[])
 {
 
 	init ();
 
+#if 1
+	sample_task ();
+#endif
 #if 0
 	sample_datatree ();
 #endif
 #if 0
 	sample_datalist ();
 #endif
-#if 1
+#if 0
 	sample_log ();
 #endif
 #if 0

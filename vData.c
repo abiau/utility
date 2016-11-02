@@ -333,7 +333,7 @@ void vdatalist_delete (void* self, VDataNode* node, dtor_ft del)
 	return ;
 }
 
-void vdatalist_seek (void* self, VDataNode* node)
+void _vdatalist_seekNode (void* self, VDataNode* node)
 {
 	VDataList* pList = (VDataList*) self;
 	if (node)
@@ -343,6 +343,24 @@ void vdatalist_seek (void* self, VDataNode* node)
 	else
 	{
 		pList->cur = pList->head;
+	}
+	return ;
+}
+
+void vdatalist_seek (void* self, POS_e from)
+{
+	VDataList* pList = (VDataList*) self;
+	if (from==HEAD)
+	{
+		pList->cur = pList->head;
+	}
+	else if (from==TAIL)
+	{
+		pList->cur = pList->tail;
+	}
+	else
+	{
+		pList->cur = NULL;
 	}
 	return ;
 }
@@ -772,20 +790,34 @@ void vdatatree_delete (void* self, VDataNode* node, dtor_ft del)
 }
 
 
+void _vdatatree_seekNode (void* self, VDataNode* node)
+{
+	VDataTree* pTree = (VDataTree*) self;
+	if (node)
+	{
+		pTree->cur = node;
+	}
+	else
+	{
+		pTree->cur = _vdatatree_mostL (self, pTree->head);
+	}
+	return ;
+}
 void vdatatree_seek (void* self, POS_e from)
 {
 	VDataTree* pTree = (VDataTree*) self;
-	VDataNode* pNode = NULL;
 
 	if (from==MOST_L)
 	{
-		pNode = _vdatatree_mostL (self, pTree->head);
-		pTree->cur = pNode;
+		pTree->cur = _vdatatree_mostL (self, pTree->head);
 	}
 	else if (from==MOST_R)
 	{
-		pNode = _vdatatree_mostR (self, pTree->head);
-		pTree->cur = pNode;
+		pTree->cur = _vdatatree_mostR (self, pTree->head);
+	}
+	else
+	{
+		pTree->cur = NULL;
 	}
 	return ;
 }
