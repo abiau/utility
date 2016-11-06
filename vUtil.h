@@ -4,9 +4,10 @@
 
 #include "vDefine.h"
 #include "vCommon.h"
-#include "vData.h"
+#include "vLock.h"
 #include "vLog.h"
 #include "vNet.h"
+#include "vData.h"
 #include "vTask.h"
 #include "vParser.h"
 

@@ -68,7 +68,7 @@ void sample_task ()
 	VTaskMng* TaskMng = vtaskmng_create ();
 	//vmsleep (2000);
 	//TaskMng->join (TaskMng);
-	TaskMng->detach (TaskMng);
+	TaskMng->join (TaskMng);
 	vtaskmng_destroy (TaskMng);
 	return ;
 }

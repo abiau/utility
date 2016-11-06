@@ -1,6 +1,9 @@
 
 #include "vLog.h"
 
+/***********************************************************************************/
+/***********************************************************************************/
+
 VLog* VUTILLOG=NULL;
 
 /***********************************************************************************/
@@ -46,7 +49,6 @@ VTimer* vtimer_create  ()
 	pTimer->now       = vtimer_now;
 	pTimer->nowStr    = vtimer_nowString;
 	pTimer->tsStr     = vtimer_tsString;
-	pthread_mutex_init (&pTimer->mutex, NULL);
 
 	return (VTimer*)pTimer;
 }
@@ -140,6 +142,9 @@ VLog* vlog_create  (int mode, char* folder, char* file, char* FmtScreen, char* F
 	memset (pLog, 0, sizeof(VLog));
 
 	/* method. */
+	pLog->pLock     = vlock_create();
+	pLog->lock      = vlog_lock;
+	pLog->unlock    = vlog_unlock;
 	pLog->print     = vlog_print;
 	pLog->set       = vlog_set;
 	pLog->setSize   = vlog_setSize;
@@ -148,7 +153,6 @@ VLog* vlog_create  (int mode, char* folder, char* file, char* FmtScreen, char* F
 	
 	/* data. */
 	pLog->mode      = mode;
-	pthread_mutex_init (&pLog->mutex, NULL);
 	if (FmtScreen==NULL || strlen(FmtScreen)==0)
 	{
 		memcpy (pLog->FmtScreen, DFL_FmtScreen, strlen(DFL_FmtScreen)+1);
@@ -190,6 +194,19 @@ void vlog_destroy (VLog* pLog)
 /***********************************************************************************/
 /***********************************************************************************/
 
+void vlog_lock (void* self)
+{
+	VLog* pLog = self;
+	pLog->pLock->lock(pLog->pLock);
+	return ;
+}
+void vlog_unlock (void* self)
+{
+	VLog* pLog = self;
+	pLog->pLock->unlock(pLog->pLock);
+	return ;
+}
+
 void vlog_set (void* self, SetVLogType_e type, ...)
 {
 	VLog* pLog = (VLog*) self;
@@ -226,14 +243,14 @@ void vlog_setSize (void* self, char* str)
 {
 	VLog* pLog = (VLog*) self;
 
-	pthread_mutex_lock (&pLog->mutex);
+	pLog->lock(pLog);
 	pLog->MaxFileSize = _STR_to_BYTE(str);
 	if (pLog->MaxFileSize <= (1<<10))
 	{
 		pLog->MaxFileSize = 1 << 30;
 
 	}
-	pthread_mutex_unlock (&pLog->mutex);
+	pLog->unlock(pLog);
 
 	return ;
 }
@@ -245,9 +262,9 @@ void vlog_setRotate (void* self, char* str)
 	{
 		return ;
 	}
-	pthread_mutex_lock (&pLog->mutex);
+	pLog->lock(pLog);
 	pLog->MaxRotateMs = _STR_to_MS (str);
-	pthread_mutex_unlock (&pLog->mutex);
+	pLog->unlock(pLog);
 	return ;
 }
 
@@ -257,7 +274,7 @@ void vlog_setPath (void* self, char* folder, char* file)
 	vzero  (pLog->folder, sizeof(pLog->folder));
 	vzero  (pLog->path,   sizeof(pLog->path));
 
-	pthread_mutex_lock (&pLog->mutex);
+	pLog->lock(pLog);
 	if ((!folder)||strlen(folder)==0)
 	{
 		snprintf (pLog->folder, sizeof(pLog->folder), "./");
@@ -274,7 +291,7 @@ void vlog_setPath (void* self, char* folder, char* file)
 	{
 		snprintf (pLog->path,   sizeof(pLog->path),   "%s/%s", pLog->folder, file);
 	}
-	pthread_mutex_unlock (&pLog->mutex);
+	pLog->unlock(pLog);
 	
 	fd_mkdir (folder);
 	return ;
@@ -285,8 +302,7 @@ void vlog_print (void* self, const char* szFunc, int nLine, ...)
 	VLog* pLog = (VLog*) self;
 	va_list ap;
 	
-	pthread_mutex_lock (&pLog->mutex);
-
+	pLog->lock(pLog);
 	if (pLog->mode & 0x0003)
 	{
 		u64t ts = vtimer_now ();
@@ -313,8 +329,7 @@ void vlog_print (void* self, const char* szFunc, int nLine, ...)
 		}
 		pLog->lastTs = ts;
 	}
-
-	pthread_mutex_unlock (&pLog->mutex);
+	pLog->unlock(pLog);
 
 	return;
 }

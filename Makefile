@@ -2,15 +2,16 @@
 # source files.
 EXE_SRC = \
 		  main.c \
-		  sample.c
+		  sample.c \
 
 LIB_SRC = \
 		  vParser.c \
 		  vTask.c \
+		  vData.c \
+		  vNet.c \
 		  vCommon.c \
 		  vLog.c \
-		  vData.c \
-		  vNet.c 
+		  vLock.c \
  
 
 OBJ = $(LIB_SRC:.c=.o)

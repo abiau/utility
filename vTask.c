@@ -71,7 +71,7 @@ void vtaskmng_detach (void* self)
 static void* vtask_routin (void* arg)
 {
 	VTaskMng* pTaskMng = (VTaskMng*) arg;
-	vmsleep (2000);
+	vmsleep (500);
 	vp ("pthread_self()=%lu\n", pthread_self());
 	vp ("pTaskMng->tid=%lu\n", pTaskMng->tid);
 	return NULL;

@@ -17,6 +17,7 @@
 
 #include "vDefine.h"
 #include "vCommon.h"
+#include "vLock.h"
 
 
 /***************************************************************************/
@@ -47,19 +48,19 @@
 /***************************************************************************/
 /***************************************************************************/
 
-
-/***************************************************************************/
-/***************************************************************************/
-
 typedef enum {
 	PATH = 1,
 	SIZE = 2,
 	ROTATE = 3,
 } SetVLogType_e;
 
+/***************************************************************************/
+/***************************************************************************/
+
 /* VLOG */
 typedef struct {
 	/* method. */
+	VLOCK_BASE;
 	void    (*print)     (void* self, const char* szFunc, int nLine, ...);
 	void    (*set)       (void* self, SetVLogType_e type, ...);
     void    (*setPath)   (void* self, char* folder, char* file);
@@ -67,7 +68,8 @@ typedef struct {
     void    (*setRotate) (void* self, char* str);
 
 	/* data. */
-	vmutex_t         mutex;
+	//vmutex_t         mutex;
+	VLock*           pLock;
 	int              mode;
 	n64t             nFileSize;
 	n64t             MaxFileSize;
@@ -89,6 +91,8 @@ void  vlog_set          (void* self, SetVLogType_e type, ...);
 void  vlog_setPath      (void* self, char* folder, char* file);
 void  vlog_setSize      (void* self, char* str);
 void  vlog_setRotate    (void* self, char* str);
+void  vlog_lock         (void* self);
+void  vlog_unlock       (void* self);
 
 
 /* VTIMER */
@@ -101,7 +105,6 @@ typedef struct {
 	char*            (*nowStr)    (char* buf, int bufLen, char* fmt);
 	char*            (*tsStr)     (char* buf, int bufLen, char* fmt, u64t ms);
 	/* data. */
-	pthread_mutex_t  mutex;
 	struct timeval   tv;
 } VTimer;
 

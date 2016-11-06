@@ -10,6 +10,7 @@
 #include "vNet.h"
 #include "vData.h"
 
+#define vlog(x, ...)      Log->print(   Log, __func__, __LINE__,    "      "    , x, ##__VA_ARGS__)
 #define vtag(y, x, ...)     Log->print(   Log, __func__, __LINE__,           y    , x, ##__VA_ARGS__)
 #define vOK(x, ...)         Log->print(   Log, __func__, __LINE__, CCG"    OK"CCe , x, ##__VA_ARGS__)
 #define vXX(x, ...)         Log->print(   Log, __func__, __LINE__, CCR"  Fail"CCe , x, ##__VA_ARGS__)
@@ -196,12 +197,14 @@ void sample_datatree ()
 
 
 	/* Delete. */
-	Tree->seek (Tree, MOST_R);
-	while ((p = Tree->foreach (Tree, MOST_R, NULL, NULL)))
+	Tree->lock (Tree);
+	Tree->seek (Tree);
+	while ((p = Tree->foreach (Tree, NULL, NULL)))
 	{
 		vtag ("Delete", "id=[%2d], arg=%d\n", p->id, *(int*)p->arg);
 		Tree->delete (Tree, p, (dtor_ft)int_del);
 	}
+	Tree->unlock (Tree);
 
 	vdatatree_destroy (Tree);
 }
@@ -213,20 +216,20 @@ void sample_datalist ()
 	int* pItem;
 	VDataNode* p;
 	VDataList* List = vdatalist_create ();
-	
+
 	/* Insert */
-	p = List->insert (List, HEAD, _lessThan, int_new(3));
-	p = List->insert (List, HEAD, _lessThan, int_new(2));
-	p = List->insert (List, HEAD, _lessThan, int_new(9));
-	p = List->insert (List, HEAD, _lessThan, int_new(6));
-	p = List->insert (List, HEAD, _lessThan, int_new(1));
-	p = List->insert (List, HEAD, _lessThan, int_new(4));
+	p = List->insert (List, _lessThan, int_new(3));
+	p = List->insert (List, _lessThan, int_new(2));
+	p = List->insert (List, _lessThan, int_new(9));
+	p = List->insert (List, _lessThan, int_new(6));
+	p = List->insert (List, _lessThan, int_new(1));
+	p = List->insert (List, _lessThan, int_new(4));
 
 	/* Travel */
-	List->travel (List, HEAD, _print);
+	List->travel (List, _print);
 
 	/* Search */
-	p = List->search (List, HEAD, _equal, pItem=int_new(2));
+	p = List->search (List, _equal, pItem=int_new(2));
 	if (p) {
 		vtag ("Search", "id=[%2d], arg=%d  (Item=%d)\n", p->id, *(int*)p->arg, *pItem);
 	} else {
@@ -235,14 +238,16 @@ void sample_datalist ()
 	int_del(pItem);
 
 	/* Foreach & Delete */
-	List->seek (List, HEAD);
+	List->lock(List);
+	List->seek (List);
 	pItem=int_new(100);
-	while((p = List->foreach (List, HEAD, _lessThan, pItem)))
+	while((p = List->foreach (List, _lessThan, pItem)))
 	{
 		vtag ("Delete", "id=%2d, arg=%d\n", p->id, *(int*)p->arg);
 		List->delete (List, p, (dtor_ft)int_del);
 	}
 	int_del(pItem);
+	List->unlock(List);
 
 	vdatalist_destroy (List);
 	
