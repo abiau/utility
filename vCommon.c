@@ -174,11 +174,13 @@ out:
 
 
 
+#if 0
 void vzero (void* dest, int size)
 {
 	memset (dest, 0, size);
 	return ;
 }
+#endif
 
 
 void vmsleep (int msec)
@@ -217,6 +219,7 @@ void* vc_malloc (int size)
 	if (p!=NULL)
 	{
 		vc_addMemUsage (size);
+		vzero (p, size);
 	}
 	return p;
 }

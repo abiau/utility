@@ -4,7 +4,6 @@
 VLock* vlock_create ()
 {
 	VLock* pLock = vc_malloc (sizeof(VLock));
-	vzero (pLock, sizeof(VLock));
 	pLock->lock = vlock_lock;
 	pLock->unlock = vlock_unlock;
 	pthread_mutex_init (&pLock->mutex, NULL);

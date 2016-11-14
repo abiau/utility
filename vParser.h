@@ -16,8 +16,8 @@ typedef struct {
 } VParser;
 
 
-VParser* vtask_create   ();
-void   vtask_destroy  (VParser* pParser);
+VParser* vparser_create   ();
+void   vparser_destroy  (VParser* pParser);
 
 
 #endif  /* __VPARSER_H__ */

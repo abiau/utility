@@ -25,8 +25,8 @@ static char*      vtimer_tsString   (char* buf, int bufLen, char* fmt, u64t ts);
 
 static int        _nDigit           (const char* str);
 static DateTime   _TS_to_DT         (u64t ts);
-static u64t       _STR_to_BYTE      (char* str);
-static u64t       _STR_to_MS        (char* str);
+static u64t       _STR_to_BYTE      (char* GMKB);
+static u64t       _STR_to_MS        (char* UYMWDhms);
 static char*      _FMT_to_STR       (char* out, int len, const char* fmt, u64t ts, const char* szFunc, int nLine, va_list ap);
 static char*      _FMT_to_STRxColor (char* str, int size);
 
@@ -36,13 +36,7 @@ static char*      _FMT_to_STRxColor (char* str, int size);
 
 VTimer* vtimer_create  ()
 {
-	VTimer* pTimer = vc_malloc (sizeof(VTimer)); 
-	if (pTimer==NULL)
-	{
-		return NULL;
-	}
-
-	memset (pTimer, 0, sizeof(VTimer));
+	VTimer* pTimer    = vc_malloc (sizeof(VTimer)); 
 	pTimer->resume    = vtimer_resume;
 	pTimer->diffus    = vtimer_diffus;
 	pTimer->diffms    = vtimer_diffms;
@@ -135,14 +129,9 @@ VLog* vlog_create  (int mode, char* folder, char* file, char* FmtScreen, char* F
 	const char* DFL_FmtFile   = "V";
 
 	VLog* pLog = vc_malloc (sizeof(VLog)); 
-	if (pLog==NULL)
-	{
-		return NULL;
-	}
-	memset (pLog, 0, sizeof(VLog));
 
 	/* method. */
-	pLog->pLock     = vlock_create();
+	pLog->Lock      = vlock_create();
 	pLog->lock      = vlog_lock;
 	pLog->unlock    = vlog_unlock;
 	pLog->print     = vlog_print;
@@ -185,6 +174,7 @@ VLog* vlog_create  (int mode, char* folder, char* file, char* FmtScreen, char* F
 
 void vlog_destroy (VLog* pLog)
 {
+	vlock_destroy(pLog->Lock);
 	vc_free (pLog, sizeof(VLog));
 	return;
 }
@@ -197,13 +187,13 @@ void vlog_destroy (VLog* pLog)
 void vlog_lock (void* self)
 {
 	VLog* pLog = self;
-	pLog->pLock->lock(pLog->pLock);
+	pLog->Lock->lock(pLog->Lock);
 	return ;
 }
 void vlog_unlock (void* self)
 {
 	VLog* pLog = self;
-	pLog->pLock->unlock(pLog->pLock);
+	pLog->Lock->unlock(pLog->Lock);
 	return ;
 }
 
@@ -239,12 +229,12 @@ void vlog_set (void* self, SetVLogType_e type, ...)
 	return ;
 }
 
-void vlog_setSize (void* self, char* str)
+void vlog_setSize (void* self, char* GMKB)
 {
 	VLog* pLog = (VLog*) self;
 
 	pLog->lock(pLog);
-	pLog->MaxFileSize = _STR_to_BYTE(str);
+	pLog->MaxFileSize = _STR_to_BYTE(GMKB);
 	if (pLog->MaxFileSize <= (1<<10))
 	{
 		pLog->MaxFileSize = 1 << 30;
@@ -255,15 +245,15 @@ void vlog_setSize (void* self, char* str)
 	return ;
 }
 
-void vlog_setRotate (void* self, char* str)
+void vlog_setRotate (void* self, char* UYMWDhms)
 {
 	VLog* pLog = (VLog*) self;
-	if (!str || strlen(str)==0)
+	if (!UYMWDhms || strlen(UYMWDhms)==0)
 	{
 		return ;
 	}
 	pLog->lock(pLog);
-	pLog->MaxRotateMs = _STR_to_MS (str);
+	pLog->MaxRotateMs = _STR_to_MS (UYMWDhms);
 	pLog->unlock(pLog);
 	return ;
 }
@@ -271,8 +261,8 @@ void vlog_setRotate (void* self, char* str)
 void vlog_setPath (void* self, char* folder, char* file)
 {
 	VLog* pLog = (VLog*) self;
-	vzero  (pLog->folder, sizeof(pLog->folder));
-	vzero  (pLog->path,   sizeof(pLog->path));
+	vzero  (pLog->folder, pLog->folder);
+	vzero  (pLog->path, pLog->path);
 
 	pLog->lock(pLog);
 	if ((!folder)||strlen(folder)==0)
@@ -414,10 +404,10 @@ static DateTime _TS_to_DT (u64t ts)
 	return DT;
 }
 
-static u64t _STR_to_MS (char* str)
+static u64t _STR_to_MS (char* UYMWDhms)
 {
 	u64t ms=0;
-	char* p = str;
+	char* p = UYMWDhms;
 	while (1)
 	{
 		n64t nNum = atoi (p);
@@ -467,10 +457,10 @@ static u64t _STR_to_MS (char* str)
 	return ms;
 }
 
-u64t _STR_to_BYTE (char* str)
+u64t _STR_to_BYTE (char* GMKB)
 {
 	u64t size=0;
-	char* p = str;
+	char* p = GMKB;
 	while (1)
 	{
 		n64t nNum = atoi (p);

@@ -5,12 +5,7 @@
 VNet* vnet_create  (SOCKTYPE_e type, int bindPort)
 {
 	VNet* p = vc_malloc (sizeof(VNet)); 
-	if (p==NULL)
-	{
-		return NULL;
-	}
 
-	memset (p, 0, sizeof(VNet));
 	/* method. */
 	p->getskt     = vnet_GetSkt;
 	p->connect    = vnet_Connect;
@@ -230,7 +225,7 @@ int vnet_Recvfrom  (void* self, int skt, char* buf, int bufLen, VAddr* pAddr)
 
 void toVAddr (VAddr* pAddr, saddrin_t addr)
 {
-	memset (pAddr, 0, sizeof(VAddr));
+	vzero (pAddr, VAddr);
 	memcpy (&pAddr->addr, &addr, sizeof(saddrin_t));
 	snprintf (pAddr->ip, sizeof(pAddr->ip), "%s", inet_ntoa (addr.sin_addr));
 	pAddr->port = addr.sin_port;
@@ -242,7 +237,7 @@ saddrin_t toSaddrIn (char* ip, int port)
 	struct hostent*  hen;
 	saddrin_t        addr; 
 
-	memset (&addr, 0, sizeof(saddrin_t));
+	vzero (&addr, saddrin_t);
 	
 	if (ip)
 	{

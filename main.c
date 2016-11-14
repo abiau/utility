@@ -12,39 +12,34 @@
 
 /*************************************************************************************/
 /*************************************************************************************/
-
 /*
  * TODO:
- *
- * 1, Log File Size
  *
  * FIXME:
  *
  * 1. naming.
  *
  */
-
-
 /*************************************************************************************/
 /*************************************************************************************/
  
-VLog* Log;
+VLog* MyLog;
 
-#define vlog(x, ...)      Log->print(   Log, __func__, __LINE__,    "      "    , x, ##__VA_ARGS__)
-#define vtag(y, x, ...)   Log->print(   Log, __func__, __LINE__,           y    , x, ##__VA_ARGS__)
 
 void init (void)
 {
-	vutillog_init (3, "./log/", "vutil.log");
-	Log = vlog_create (  3,     "txt", "./log/", "h:m:s | F15():L4 | S6 | V",  "h:m:s | F15():L4 | S6 | V");
-	vtag ("MEM", "mem=%llu\n", vc_getMemUsage());
+	printf ("vmemory=%llu\n", vc_getMemUsage());
+	vlog_init (3, "./log/", "vutil.log");
+	MyLog = vlog_create (  3, "./log/","txt", "h:m:s | F15():L4 | S6 | V",  "h:m:s | F15():L4 | S6 | V");
+	//vtag ("MEM", "mem=%llu\n", vc_getMemUsage());
 }
 
 void deinit (void)
 {
-	vtag ("MEM", "mem=%llu\n", vc_getMemUsage());
-	vutillog_deinit ();
-	vlog_destroy (Log);
+	//vtag ("MEM", "mem=%llu\n", vc_getMemUsage());
+	vlog_destroy (MyLog);
+	vlog_deinit ();
+	printf ("vmemory=%llu\n", vc_getMemUsage());
 }
 
 /*************************************************************************************/
@@ -62,19 +57,42 @@ extern void sample_task ();
 /*************************************************************************************/
 /*************************************************************************************/
 
+void* task (void* arg)
+{
+	size_t n = (size_t)arg;
+	vlog ("%zd\n", n);
+	return NULL;
+}
 
 void sample_task ()
 {
-	VTaskMng* TaskMng = vtaskmng_create ();
-	//vmsleep (2000);
-	//TaskMng->join (TaskMng);
-	TaskMng->join (TaskMng);
-	vtaskmng_destroy (TaskMng);
+#if 0
+	vtag ("MEM", "mem=%llu\n", vc_getMemUsage());
+	VTPool* TPoll = vtpool_create (1, 10);
+	vtpool_destroy (TPoll);
+#endif
+
+	size_t   i;
+	VTask*   pTask;
+	VThread* Thread = vthread_create();
+	
+	vmsleep (200);
+	
+	Thread->run (Thread);
+	for (i=0; i<5; i++)
+	{
+		pTask = vtask_create (task, (void*)i, 0, 0);
+		Thread->addTask(Thread, pTask);
+		vmsleep (400);
+	}
+
+	Thread->ready (Thread);
+	Thread->exit (Thread);
+	Thread->clearTask(Thread);
+	Thread->join (Thread);
+	vthread_destory (Thread);
 	return ;
 }
-
-
-
 
 
 
@@ -84,31 +102,17 @@ void sample_task ()
 
 int main (int argc, char* argv[])
 {
-
 	init ();
 
 #if 1
 	sample_task ();
-#endif
-#if 0
+#else
 	sample_datatree ();
-#endif
-#if 0
 	sample_datalist ();
-#endif
-#if 0
 	sample_log ();
-#endif
-#if 0
 	sample_udpServer ();
-#endif
-#if 0
 	sample_udpClient ();
-#endif
-#if 0
 	sample_tcpClient ();
-#endif
-#if 0
 	sample_tcpServer ();
 #endif
 

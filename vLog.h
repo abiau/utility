@@ -23,12 +23,12 @@
 /***************************************************************************/
 /***************************************************************************/
 
-#define vutillog_init(a,b,c) do{ \
+#define vlog_init(a,b,c) do{ \
 	if(VUTILLOG==NULL) { \
 		VUTILLOG = vlog_create ((a),(b),(c),"h:m:s | F15():L4 | S6 | V","h:m:s | F15():L4 | S6 | V"); \
 	}; }while(0)
 
-#define vutillog_deinit() do{ \
+#define vlog_deinit() do{ \
 	if(VUTILLOG!=NULL) { \
 		vlog_destroy (VUTILLOG); \
 	}; }while(0)
@@ -36,17 +36,30 @@
 #define vp(x, ...) do{ \
 	if(VUTILLOG) { VUTILLOG->print(VUTILLOG, __func__, __LINE__, "",   x, ##__VA_ARGS__); \
 	}; }while(0)
+#define vlog vp
 
 #define vt(y, x, ...) do{ \
 	if(VUTILLOG) { VUTILLOG->print(VUTILLOG, __func__, __LINE__,  y,   x, ##__VA_ARGS__); \
 	}; }while(0)
+#define vtag vt
 
-#define verr(e) do{ \
+#define ve(e) do{ \
 	if(VUTILLOG) { VUTILLOG->print(VUTILLOG, __func__, __LINE__, "",   "%s(), errno=%d|%s\n", e, errno, strerror(errno)); \
 	}; }while(0)
+#define verr ve
 
 /***************************************************************************/
 /***************************************************************************/
+
+#define VLOG_BASE \
+	struct {\
+		void    (*print)     (void* self, const char* szFunc, int nLine, ...);\
+		void    (*set)       (void* self, SetVLogType_e type, ...);\
+		void    (*setPath)   (void* self, char* folder, char* file);\
+		void    (*setSize)   (void* self, char* GMKB);\
+		void    (*setRotate) (void* self, char* UYMWDhms);\
+	};\
+
 
 typedef enum {
 	PATH = 1,
@@ -61,15 +74,10 @@ typedef enum {
 typedef struct {
 	/* method. */
 	VLOCK_BASE;
-	void    (*print)     (void* self, const char* szFunc, int nLine, ...);
-	void    (*set)       (void* self, SetVLogType_e type, ...);
-    void    (*setPath)   (void* self, char* folder, char* file);
-    void    (*setSize)   (void* self, char* str);
-    void    (*setRotate) (void* self, char* str);
+	VLOG_BASE;
 
 	/* data. */
-	//vmutex_t         mutex;
-	VLock*           pLock;
+	VLock*           Lock;
 	int              mode;
 	n64t             nFileSize;
 	n64t             MaxFileSize;
@@ -89,8 +97,8 @@ void  vlog_destroy      (VLog* pLog);
 void  vlog_print        (void* self, const char* szFunc, int nLine, ...);
 void  vlog_set          (void* self, SetVLogType_e type, ...);
 void  vlog_setPath      (void* self, char* folder, char* file);
-void  vlog_setSize      (void* self, char* str);
-void  vlog_setRotate    (void* self, char* str);
+void  vlog_setSize      (void* self, char* GMKB);
+void  vlog_setRotate    (void* self, char* UYMWDhms);
 void  vlog_lock         (void* self);
 void  vlog_unlock       (void* self);
 

@@ -9,14 +9,14 @@
 /*************************************************************************************/
 /*************************************************************************************/
 
-#define VDATA_BASE \
+#define v_BASE \
 	struct {\
-		void          (*travel)      (void* self, todo_ft todo);\
-		VDataNode*    (*insert)      (void* self, comp_ft less, void* arg);\
-		VDataNode*    (*search)      (void* self, comp_ft equal, void* arg);\
-		void          (*delete)      (void* self, VDataNode* node, dtor_ft del);\
-		void          (*seek)        (void* self);\
-		VDataNode*    (*foreach)     (void* self, comp_ft filter, void* arg);\
+		void      (*travel)      (void* self, todo_ft todo);\
+		VNode*    (*insert)      (void* self, comp_ft less, void* arg);\
+		VNode*    (*search)      (void* self, comp_ft equal, void* arg);\
+		void      (*delete)      (void* self, VNode* node, dtor_ft del);\
+		void      (*seek)        (void* self);\
+		VNode*    (*foreach)     (void* self, comp_ft filter, void* arg);\
 	}; 
 
 /*************************************************************************************/
@@ -34,60 +34,21 @@ typedef enum {
 /*************************************************************************************/
 /*************************************************************************************/
 
-typedef struct VDataNode{
+typedef struct VNode{
 	u64t    id;
 	void*   arg;
-	struct  VDataNode* F;
-	struct  VDataNode* L;
-	struct  VDataNode* R;
-	struct  VDataNode* prev;
-	struct  VDataNode* next;
-} VDataNode;
+	struct  VNode* F;
+	struct  VNode* L;
+	struct  VNode* R;
+	struct  VNode* prev;
+	struct  VNode* next;
+} VNode;
 
-int*          int_new               (int n);
-void          int_del               (int* p);
-u64t          vdatanode_newId       (void);
-VDataNode*    vdatanode_create      (void* arg);
-void          vdatanode_destroy     (VDataNode* node);
-
-/*************************************************************************************/
-/*************************************************************************************/
-
-typedef struct {
-	/* method. */
-	VLOCK_BASE;
-	VDATA_BASE;
-
-	/* data. */
-	VLock*        pLock;
-	int           size;
-	VDataNode*    cur;
-	VDataNode*    head;
-	VDataNode*    tail;
-} VDataList;
-
-
-VDataList*    vdatalist_create         (void);
-void          vdatalist_destroy        (VDataList* pList);
-void          vdatalist_lock           (void* self);
-void          vdatalist_unlock         (void* self);
-
-void          vdatalist_travel         (void* self, todo_ft todo);
-VDataNode*    vdatalist_insert         (void* self, comp_ft less, void* arg);
-VDataNode*    vdatalist_search         (void* self, comp_ft equal, void* arg);
-void          vdatalist_delete         (void* self, VDataNode* node, dtor_ft del);
-void          vdatalist_seek           (void* self);
-VDataNode*    vdatalist_foreach        (void* self, comp_ft filter, void* arg);
-
-VDataNode*    vdatalist_insertFrom    (void* self, POS_e from, comp_ft less, void* arg);
-VDataNode*    vdatalist_searchFrom    (void* self, POS_e from, comp_ft equal, void* arg);
-void          vdatalist_seekFrom      (void* self, POS_e from);
-void          vdatalist_seekNode      (void* self, VDataNode* node);
-VDataNode*    vdatalist_foreachFrom   (void* self, POS_e from, comp_ft filter, void* arg);
-
-VDataNode*    _vdatalist_searchFalse   (void* self, POS_e from, comp_ft comp, void* arg);
-void          _vdatalist_pushNode      (void* self, POS_e to, VDataNode* node);
-
+int*      int_new           (int n);
+void      int_del           (int* p);
+u64t      vnode_newId       (void);
+VNode*    vnode_create      (void* arg);
+void      vnode_destroy     (VNode* node);
 
 /*************************************************************************************/
 /*************************************************************************************/
@@ -95,42 +56,81 @@ void          _vdatalist_pushNode      (void* self, POS_e to, VDataNode* node);
 typedef struct {
 	/* method. */
 	VLOCK_BASE;
-	VDATA_BASE;
+	v_BASE;
 
 	/* data. */
-	VLock*        pLock;
-	int           size;
-	VDataNode*    cur;
-	VDataNode*    head;
-} VDataTree;
+	VLock*    Lock;
+	int       size;
+	VNode*    cur;
+	VNode*    head;
+	VNode*    tail;
+} VList;
 
-VDataTree*    vdatatree_create         (void);
-void          vdatatree_destroy        (VDataTree* pTree);
-void          vdatatree_lock           (void* self);
-void          vdatatree_unlock         (void* self);
 
-void          vdatatree_travel         (void* self, todo_ft todo);
-VDataNode*    vdatatree_insert         (void* self, comp_ft less, void* arg);
-VDataNode*    vdatatree_search         (void* self, comp_ft equal, void* arg);
-void          vdatatree_delete         (void* self, VDataNode* node, dtor_ft del);
-void          vdatatree_seek           (void* self);
-VDataNode*    vdatatree_foreach        (void* self, comp_ft filter, void* arg);
+VList*    vlist_create         (void);
+void      vlist_destroy        (VList* pList);
+void      vlist_lock           (void* self);
+void      vlist_unlock         (void* self);
 
-void          vdatatree_seekFrom      (void* self, POS_e from);
-void          vdatatree_seekNode      (void* self, VDataNode* node);
-VDataNode*    vdatatree_foreachFrom   (void* self, POS_e from, comp_ft filter, void* arg);
+void      vlist_travel         (void* self, todo_ft todo);
+VNode*    vlist_insert         (void* self, comp_ft less, void* arg);
+VNode*    vlist_search         (void* self, comp_ft equal, void* arg);
+void      vlist_delete         (void* self, VNode* node, dtor_ft del);
+void      vlist_seek           (void* self);
+VNode*    vlist_foreach        (void* self, comp_ft filter, void* arg);
 
-int           _vdatatree_isLorR        (void* self, VDataNode* node);
-VDataNode*    _vdatatree_mostL         (void* self, VDataNode* node);
-VDataNode*    _vdatatree_mostR         (void* self, VDataNode* node);
-VDataNode*    _vdatatree_next          (void* self, VDataNode* node);
-VDataNode*    _vdatatree_prev          (void* self, VDataNode* node);
+VNode*    vlist_insertFrom     (void* self, POS_e from, comp_ft less, void* arg);
+VNode*    vlist_searchFrom     (void* self, POS_e from, comp_ft equal, void* arg);
+void      vlist_seekFrom       (void* self, POS_e from);
+void      vlist_seekNode       (void* self, VNode* node);
+VNode*    vlist_foreachFrom    (void* self, POS_e from, comp_ft filter, void* arg);
+
+VNode*    _vlist_searchFalse   (void* self, POS_e from, comp_ft comp, void* arg);
+void      _vlist_pushNode      (void* self, POS_e to, VNode* node);
+
+
+/*************************************************************************************/
+/*************************************************************************************/
+
+typedef struct {
+	/* method. */
+	VLOCK_BASE;
+	v_BASE;
+
+	/* data. */
+	VLock*    Lock;
+	int       size;
+	VNode*    cur;
+	VNode*    head;
+} VTree;
+
+VTree*    vtree_create         (void);
+void      vtree_destroy        (VTree* pTree);
+void      vtree_lock           (void* self);
+void      vtree_unlock         (void* self);
+
+void      vtree_travel         (void* self, todo_ft todo);
+VNode*    vtree_insert         (void* self, comp_ft less, void* arg);
+VNode*    vtree_search         (void* self, comp_ft equal, void* arg);
+void      vtree_delete         (void* self, VNode* node, dtor_ft del);
+void      vtree_seek           (void* self);
+VNode*    vtree_foreach        (void* self, comp_ft filter, void* arg);
+
+void      vtree_seekFrom       (void* self, POS_e from);
+void      vtree_seekNode       (void* self, VNode* node);
+VNode*    vtree_foreachFrom    (void* self, POS_e from, comp_ft filter, void* arg);
+
+int       _vtree_isLorR        (void* self, VNode* node);
+VNode*    _vtree_mostL         (void* self, VNode* node);
+VNode*    _vtree_mostR         (void* self, VNode* node);
+VNode*    _vtree_next          (void* self, VNode* node);
+VNode*    _vtree_prev          (void* self, VNode* node);
 
 #endif  /* __VDATE_H__ */
 
 
-//VDataList* pList = (VDataList*) self;
-//VDataTree* pTree = (VDataTree*) self;
-//VDataNode* pNode = node;
+//VList* pList = (VList*) self;
+//VTree* pTree = (VTree*) self;
+//VNode* pNode = node;
   
   

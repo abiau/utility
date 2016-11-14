@@ -12,11 +12,20 @@
 #include <sys/stat.h> 
 #include <fcntl.h> 
 #include <libgen.h>
+#include <assert.h>
 
 #include "vDefine.h"
 
-void   vzero            (void* src, int size);
-void   vmsleep          (int msec);
+/*************************************************************************************/
+/*************************************************************************************/
+
+#define vzero(addr,type)  do{memset(addr, 0, sizeof(type));}while(0)
+
+/*************************************************************************************/
+/*************************************************************************************/
+
+//void   vzero            (void* src, int size);
+void   vmsleep            (int msec);
 void*  vc_malloc          (int size);
 int    vc_free            (void* p, int size);
 n64t   vc_getMemUsage     (void);
@@ -34,10 +43,12 @@ void   fd_Backtrace_file  (const char* path);
 void   fd_Backtrace       (char* buf, int len);
 
 
+/*************************************************************************************/
+/*************************************************************************************/
 
 
 #endif  /* __VCOMMON_H__ */
 
-	//static pthread_mutex_t lock_memory = PTHREAD_MUTEX_INITIALIZER;
-	//
+//static pthread_mutex_t lock_memory = PTHREAD_MUTEX_INITIALIZER;
+
 

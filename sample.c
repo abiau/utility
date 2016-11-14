@@ -10,14 +10,13 @@
 #include "vNet.h"
 #include "vData.h"
 
-#define vlog(x, ...)      Log->print(   Log, __func__, __LINE__,    "      "    , x, ##__VA_ARGS__)
-#define vtag(y, x, ...)     Log->print(   Log, __func__, __LINE__,           y    , x, ##__VA_ARGS__)
-#define vOK(x, ...)         Log->print(   Log, __func__, __LINE__, CCG"    OK"CCe , x, ##__VA_ARGS__)
-#define vXX(x, ...)         Log->print(   Log, __func__, __LINE__, CCR"  Fail"CCe , x, ##__VA_ARGS__)
-#define vC(x, ...)          Log->print(   Log, __func__, __LINE__, CCr"Client"CCe , x, ##__VA_ARGS__)
-#define vS(x, ...)          Log->print(   Log, __func__, __LINE__, CCg"Server"CCe , x, ##__VA_ARGS__)
+#define mytag(y, x, ...)     MyLog->print( MyLog, __func__, __LINE__,           y    , x, ##__VA_ARGS__ )
+#define myOK(x, ...)         MyLog->print( MyLog, __func__, __LINE__, CCG"    OK"CCe , x, ##__VA_ARGS__ )
+#define myXX(x, ...)         MyLog->print( MyLog, __func__, __LINE__, CCR"  Fail"CCe , x, ##__VA_ARGS__ )
+#define myC(x, ...)          MyLog->print( MyLog, __func__, __LINE__, CCr"Client"CCe , x, ##__VA_ARGS__ )
+#define myS(x, ...)          MyLog->print( MyLog, __func__, __LINE__, CCg"Server"CCe , x, ##__VA_ARGS__ )
 
-extern VLog* Log;
+extern VLog* MyLog;
 
 void sample_udpClient ()
 {
@@ -25,18 +24,18 @@ void sample_udpClient ()
 	char  buf[1024];
 	char* str = "Hello\n";
 
-	memset (buf, 0, sizeof(buf));
+	vzero (buf, buf);
 	memcpy (buf, str, strlen(str)+1);
 
 	VNet* Client = vnet_create (UDP, 5566);
 	skt = Client->getskt (Client);
 	Client->connect (Client, "127.0.0.1", 5566);
-	vC ("skt=%d\n", skt);
+	myC ("skt=%d\n", skt);
 	while (1)
 	{
 		vmsleep (1000);
 		Client->write (Client, skt, buf, sizeof(buf));
-		vC (buf);
+		myC (buf);
 	}
 	vnet_destroy (Client);
 }
@@ -49,12 +48,12 @@ void sample_udpServer ()
 
 	VNet* Server = vnet_create (UDP, 5566);
 	skt = Server->getskt (Server);
-	vS ("skt=%d\n", skt);
+	myS ("skt=%d\n", skt);
 	while (1)
 	{
-		memset (buf, 0, sizeof(buf));
+		vzero (buf, buf);
 		Server->recvfrom (Server, skt, buf, sizeof(buf), &vaddr);
-		vS ("ip:port=[%s:%d]  %s\n", vaddr.ip, vaddr.port, buf);
+		myS ("ip:port=[%s:%d]  %s\n", vaddr.ip, vaddr.port, buf);
 	}
 	vnet_destroy (Server);
 }
@@ -65,18 +64,18 @@ void sample_tcpClient ()
 	char  buf[1024];
 	char* str = "Hello";
 
-	memset (buf, 0, sizeof(buf));
+	vzero (buf, buf);
 	memcpy (buf, str, strlen(str)+1);
 
 	VNet* Client = vnet_create (TCP, 5566);
 	skt = Client->getskt (Client);
 	Client->connect (Client, "127.0.0.1", 5566);
-	vC ("skt=%d\n", skt);
+	myC ("skt=%d\n", skt);
 	while (1)
 	{
 		vmsleep (1000);
 		Client->write (Client, skt, buf, sizeof(buf));
-		vC ("%s\n", buf);
+		myC ("%s\n", buf);
 	}
 	vnet_destroy (Client);
 }
@@ -92,17 +91,17 @@ void sample_tcpServer ()
 	VNet* Server = vnet_create (TCP, 5566);
 	skt = Server->getskt (Server);
 	Server->listen (Server, 10);
-	vS ("skt=%d\n", skt);
+	myS ("skt=%d\n", skt);
 	while (1)
 	{
 		sktSession = Server->accept (Server, &vaddr);
-		vS ("sktSession=%d, ip:port=[%s:%d]\n", sktSession, vaddr.ip, vaddr.port);
+		myS ("sktSession=%d, ip:port=[%s:%d]\n", sktSession, vaddr.ip, vaddr.port);
 		while (1)
 		{
-			memset (buf, 0, sizeof(buf));
+			vzero (buf, buf);
 			ret = Server->read (Server, sktSession, buf, sizeof(buf));
 			if (ret<=0) { break; }
-			vS ("%s\n", buf);
+			myS ("%s\n", buf);
 		}
 		vnet_Close (sktSession);
 	}
@@ -151,7 +150,7 @@ static int _equal (void* itemInQueue, void* arg)
 
 static int _print (void* arg)
 {
-	vtag ("Travel", "arg=%d\n", *(int*)arg);
+	mytag ("Travel", "arg=%d\n", *(int*)arg);
 	return 0;
 }
 
@@ -171,8 +170,8 @@ static int _lessThan (void* itemInQueue, void* arg)
 void sample_datatree ()
 {
 	int* pItem;
-	VDataNode* p;
-	VDataTree* Tree = vdatatree_create ();
+	VNode* p;
+	VTree* Tree = vtree_create ();
 
 	/* Insert. */
 	p = Tree->insert (Tree, _lessThan, int_new(8));
@@ -189,9 +188,9 @@ void sample_datatree ()
 	/* Search. */
 	p = Tree->search (Tree, _equal, pItem=int_new(7));
 	if (p) {
-		vtag ("Search", "id=[%2d], arg=%d  (Item=%d)\n", p->id, *(int*)p->arg, *pItem);
+		mytag ("Search", "id=[%2d], arg=%d  (Item=%d)\n", p->id, *(int*)p->arg, *pItem);
 	} else {
-		vtag ("Search", "none.  (Item=%d)\n", *pItem);
+		mytag ("Search", "none.  (Item=%d)\n", *pItem);
 	}
 	int_del (pItem);
 
@@ -201,12 +200,12 @@ void sample_datatree ()
 	Tree->seek (Tree);
 	while ((p = Tree->foreach (Tree, NULL, NULL)))
 	{
-		vtag ("Delete", "id=[%2d], arg=%d\n", p->id, *(int*)p->arg);
+		mytag ("Delete", "id=[%2d], arg=%d\n", p->id, *(int*)p->arg);
 		Tree->delete (Tree, p, (dtor_ft)int_del);
 	}
 	Tree->unlock (Tree);
 
-	vdatatree_destroy (Tree);
+	vtree_destroy (Tree);
 }
 
 
@@ -214,8 +213,8 @@ void sample_datatree ()
 void sample_datalist ()
 {
 	int* pItem;
-	VDataNode* p;
-	VDataList* List = vdatalist_create ();
+	VNode* p;
+	VList* List = vlist_create ();
 
 	/* Insert */
 	p = List->insert (List, _lessThan, int_new(3));
@@ -231,9 +230,9 @@ void sample_datalist ()
 	/* Search */
 	p = List->search (List, _equal, pItem=int_new(2));
 	if (p) {
-		vtag ("Search", "id=[%2d], arg=%d  (Item=%d)\n", p->id, *(int*)p->arg, *pItem);
+		mytag ("Search", "id=[%2d], arg=%d  (Item=%d)\n", p->id, *(int*)p->arg, *pItem);
 	} else {
-		vtag ("Search", "none.  (Item=%d)\n", *pItem);
+		mytag ("Search", "none.  (Item=%d)\n", *pItem);
 	}
 	int_del(pItem);
 
@@ -243,13 +242,13 @@ void sample_datalist ()
 	pItem=int_new(100);
 	while((p = List->foreach (List, _lessThan, pItem)))
 	{
-		vtag ("Delete", "id=%2d, arg=%d\n", p->id, *(int*)p->arg);
+		mytag ("Delete", "id=%2d, arg=%d\n", p->id, *(int*)p->arg);
 		List->delete (List, p, (dtor_ft)int_del);
 	}
 	int_del(pItem);
 	List->unlock(List);
 
-	vdatalist_destroy (List);
+	vlist_destroy (List);
 	
 	return ;
 }
